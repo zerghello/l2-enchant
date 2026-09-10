@@ -34,7 +34,7 @@ table{width:100%;border-collapse:collapse}td,th{padding:8px 3px;text-align:left;
 <div class="card"><div class="stats">
 <div class="stat">Среднее синтезов<b id="expected">—</b></div>
 <div class="stat">Шанс полного прохода<b id="run">—</b></div>
-<div class="stat">Средняя стоимость<b id="avgcost">—</b><div class="small">учитывает цену каждой попытки</div></div>
+<div class="stat">Средняя стоимость<b id="avgcost">—</b><div class="small">пересчитывается сразу; учитывает цену каждой попытки</div></div>
 <div class="stat">50% вероятность<b id="p50">—</b></div>
 <div class="stat">90% вероятность<b id="p90">—</b></div>
 <div class="stat">95% вероятность<b id="p95">—</b></div>
@@ -58,7 +58,7 @@ function num(id){
 }
 function probs(){return Array.from({length:20},(_,i)=>Math.max(0,Math.min(100,num('p'+i)))/100)}
 function price(id){return Math.max(0,num(id))}
-function fmt(n){return Number.isFinite(n)?Math.round(n).toLocaleString('ru-RU'):'∞'}
+function fmt(n){return Number.isFinite(n)?n.toLocaleString('ru-RU',{maximumFractionDigits:2}):'∞'}
 function product(s,t,p){let q=1;for(let i=s;i<t;i++)q*=p[i];return q}
 
 /* Exact expected attempts.
@@ -123,6 +123,7 @@ function calc(){
  document.getElementById('run').textContent=(q*100).toFixed(6)+'%';
  const ac=avgCost(s,t,p,keepOn);
  document.getElementById('avgcost').textContent=Number.isFinite(ac)?fmt(ac):'∞';
+ document.getElementById('avgcost').title='Пересчитывается сразу при изменении цены или шанса';
  for(const [id,x] of [['p50',.5],['p90',.9],['p95',.95],['p99',.99]]){
    let n=needed(x,s,t,p,keepOn);
    document.getElementById(id).textContent=n==null?'∞':fmt(n)
@@ -135,7 +136,7 @@ function calc(){
  }
  document.getElementById('tbl').innerHTML=h
 }
-const calcBtn=document.getElementById('calc');calcBtn.onclick=calc;document.querySelectorAll('input').forEach(x=>x.addEventListener('change',calc));
+const calcBtn=document.getElementById('calc');calcBtn.onclick=calc;document.querySelectorAll('input').forEach(x=>x.addEventListener('input',calc));
 document.getElementById('sy').onclick=()=>{document.getElementById('sy').classList.add('active');document.getElementById('en').classList.remove('active')};
 document.getElementById('en').onclick=()=>{alert('Раздел заточки будет добавлен без изменения калькулятора синтеза.')};
 calc();
