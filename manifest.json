@@ -1,6 +1,6 @@
 {
-  "name": "L2 Enchant Calculator",
-  "short_name": "L2 Enchant",
+  "name": "L2 Calculator",
+  "short_name": "L2 Calc",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#0b1020",
@@ -10,8 +10,7 @@
     {
       "src": "icon.svg",
       "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/svg+xml"
     }
   ]
 }
