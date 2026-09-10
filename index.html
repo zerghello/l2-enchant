@@ -8,76 +8,111 @@
 <title>L2 Enchant Calculator</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#0b1020;color:#f3f4f6;font:16px system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-main{max-width:680px;margin:auto;padding:20px 16px 40px}h1{font-size:26px;margin:4px 0 6px}.sub{color:#9ca3af;margin-bottom:18px}
+main{max-width:680px;margin:auto;padding:20px 16px 40px}h1{font-size:26px;margin:4px 0 6px}.sub,.small{color:#9ca3af}
 .card{background:#151c30;border:1px solid #27324d;border-radius:18px;padding:16px;margin:12px 0}
-label{display:block;color:#cbd5e1;font-size:14px;margin-bottom:6px}input{width:100%;padding:12px;border-radius:12px;border:1px solid #33415f;background:#0e1527;color:#fff;font-size:17px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.levels{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
-.row{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#0e1527;padding:9px 10px;border-radius:12px}.row input{width:105px;padding:8px;text-align:right}
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{background:#0e1527;padding:13px;border-radius:14px}.stat b{display:block;font-size:20px;margin-top:4px}
-table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:9px 4px;border-bottom:1px solid #29334b}th{color:#9ca3af;font-weight:500}
-button{width:100%;padding:13px;border:0;border-radius:12px;background:#4f46e5;color:white;font-size:16px;font-weight:700;margin-top:12px}
-.small{font-size:13px;color:#9ca3af;line-height:1.45}
-@media(max-width:430px){.grid,.stats,.levels{grid-template-columns:1fr}}
+label{display:block;color:#cbd5e1;font-size:14px;margin-bottom:6px}
+input{width:100%;padding:12px;border-radius:12px;border:1px solid #33415f;background:#0e1527;color:#fff;font-size:17px}
+.grid,.levels,.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.levels{margin-top:10px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#0e1527;padding:9px;border-radius:12px}.row input{width:105px;padding:8px;text-align:right}
+.stat{background:#0e1527;padding:13px;border-radius:14px}.stat b{display:block;font-size:20px;margin-top:4px}
+table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:9px 4px;border-bottom:1px solid #29334b}th{color:#9ca3af}
+button{width:100%;padding:13px;border:0;border-radius:12px;background:#4f46e5;color:#fff;font-size:16px;font-weight:700;margin-top:12px}
+.small{font-size:13px;line-height:1.45}@media(max-width:430px){.grid,.levels,.stats{grid-template-columns:1fr}}
 </style>
 </head>
 <body><main>
 <h1>⚔️ L2 Enchant Calculator</h1>
-<div class="sub">Расчёт с полным сбросом на +0 при неудаче</div>
+<div class="sub">При неудаче предмет возвращается на указанный стартовый уровень</div>
+
 <div class="card">
 <div class="grid">
+<div><label>Стартовый уровень (сброс)</label><input id="start" type="number" min="0" max="19" value="0"></div>
 <div><label>Целевой уровень</label><input id="target" type="number" min="1" max="20" value="5"></div>
-<div><label>Стартовый уровень</label><input id="start" type="number" min="0" max="19" value="0"></div>
 </div>
 <label style="margin-top:14px">Шансы перехода</label>
 <div id="levels" class="levels"></div>
 <button id="calc">Рассчитать</button>
 </div>
+
 <div class="card"><div class="stats">
 <div class="stat">Среднее число свитков<b id="expected">—</b></div>
-<div class="stat">Шанс одного прохода<b id="runprob">—</b></div>
+<div class="stat">Шанс одного полного прохода<b id="runprob">—</b></div>
 <div class="stat">50% успеха<b id="p50">—</b></div>
 <div class="stat">90% успеха<b id="p90">—</b></div>
 <div class="stat">95% успеха<b id="p95">—</b></div>
 <div class="stat">99% успеха<b id="p99">—</b></div>
 </div></div>
-<div class="card"><h3>Вероятность непрерывного прохождения</h3><table><thead><tr><th>Переход</th><th>Шанс</th><th>Накопленный</th></tr></thead><tbody id="resultTable"></tbody></table></div>
-<div class="small">Модель: каждый неудачный энчант возвращает предмет на +0. Расчёт вероятностей выполнен матричным методом, поэтому большие значения уровня считаются быстро.</div>
+
+<div class="card"><h3>Расчёт</h3>
+<table><thead><tr><th>Переход</th><th>Шанс</th><th>Накопленный</th></tr></thead>
+<tbody id="resultTable"></tbody></table></div>
+<div class="small">Пример: старт +5, цель +6 — при провале +5→+6 предмет снова становится +5. Уровни ниже +5 в расчёте не участвуют.</div>
 </main>
+
 <script>
 const defaults=[50,35,25,15,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10];
 const levelsEl=document.getElementById('levels');
-for(let i=0;i<20;i++){const d=document.createElement('div');d.className='row';d.innerHTML=`<span>+${i} → +${i+1}</span><input id="p${i}" type="number" min="0" max="100" step="0.1" value="${defaults[i]}">`;levelsEl.appendChild(d)}
+for(let i=0;i<20;i++){
+ const d=document.createElement('div');d.className='row';
+ d.innerHTML=`<span>+${i} → +${i+1}</span><input id="p${i}" type="number" min="0" max="100" step="0.1" value="${defaults[i]}">`;
+ levelsEl.appendChild(d);
+}
 function vals(){return Array.from({length:20},(_,i)=>Math.max(0,Math.min(100,Number(document.getElementById('p'+i).value)||0))/100)}
-function fmt(n){return Math.round(n).toLocaleString('ru-RU')}
-function mul(A,B){const n=A.length,C=Array.from({length:n},()=>Array(n).fill(0));for(let i=0;i<n;i++)for(let k=0;k<n;k++){const x=A[i][k];if(!x)continue;for(let j=0;j<n;j++)C[i][j]+=x*B[k][j]}return C}
-function mpow(A,e){const n=A.length;let R=Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>i===j?1:0));while(e>0){if(e%2===1)R=mul(R,A);A=mul(A,A);e=Math.floor(e/2)}return R}
-function probAfter(N,t,s,ps){
-  if(N===0)return s>=t?1:0;
-  // States 0..t-1, with t as absorbing success.
-  const n=t+1,A=Array.from({length:n},()=>Array(n).fill(0));
-  for(let i=0;i<t;i++){const p=ps[i]||0;A[i][0]+=1-p;A[i][i+1]+=p}
-  A[t][t]=1;
-  return mpow(A,N)[s][t];
+function fmt(n){return Number.isFinite(n)?Math.round(n).toLocaleString('ru-RU'):'∞'}
+
+/*
+Reset model:
+- Initial state is start.
+- On failure at ANY transition >= start, state returns to start.
+- Therefore only probabilities p[start] ... p[target-1] matter.
+- Expected attempts E[start] = 1 / P(full successful run).
+*/
+function runProbability(start,target,p){
+ let q=1;
+ for(let i=start;i<target;i++)q*=p[i];
+ return q;
 }
-function need(x,t,s,ps){
-  if(s>=t)return 0;
-  let lo=0,hi=1;
-  while(probAfter(hi,t,s,ps)<x && hi<1000000000)hi*=2;
-  if(probAfter(hi,t,s,ps)<x)return null;
-  while(lo<hi){const m=Math.floor((lo+hi)/2);if(probAfter(m,t,s,ps)>=x)hi=m;else lo=m+1}
-  return lo;
+function expectedAttempts(start,target,p){
+ const q=runProbability(start,target,p);
+ return q>0 ? 1/q : Infinity;
 }
+
+/* Probability of success after N scrolls, where every failure resets to START. */
+function probabilityAfter(N,start,target,p){
+ if(start>=target)return 1;
+ const q=runProbability(start,target,p);
+ // Each attempt from start is an independent full run; success probability q.
+ return 1-Math.pow(1-q,N);
+}
+function need(x,start,target,p){
+ if(start>=target)return 0;
+ const q=runProbability(start,target,p);
+ if(q<=0)return null;
+ // 1-(1-q)^N >= x  =>  N >= ln(1-x)/ln(1-q)
+ return Math.ceil(Math.log(1-x)/Math.log1p(-q));
+}
+
 function calc(){
-  const t=Math.max(1,Math.min(20,Number(target.value)||1)),s=Math.max(0,Math.min(t-1,Number(start.value)||0)),ps=vals();
-  let expected0=0,prod=1;for(let i=0;i<t;i++){prod*=ps[i];if(prod>0)expected0+=1/prod;else {expected0=Infinity;break}}
-  let expected=expected0;
-  if(s>0){let tail=0,q=1;for(let i=s;i<t;i++){q*=ps[i];if(q>0)tail+=1/q;else {tail=Infinity;break}}expected=tail+(1-q)*expected0}
-  document.getElementById('expected').textContent=Number.isFinite(expected)?fmt(expected):'∞';
-  let run=1;for(let i=s;i<t;i++)run*=ps[i];
-  document.getElementById('runprob').textContent=(run*100).toFixed(6)+'%';
-  for(const [id,x] of [['p50',.5],['p90',.9],['p95',.95],['p99',.99]]){const n=need(x,t,s,ps);document.getElementById(id).textContent=n===null?'∞':fmt(n)}
-  let html='',c=1;for(let i=s;i<t;i++){c*=ps[i];html+=`<tr><td>+${i} → +${i+1}</td><td>${(ps[i]*100).toFixed(1)}%</td><td>${(c*100).toFixed(6)}%</td></tr>`}document.getElementById('resultTable').innerHTML=html;
+ let start=Math.max(0,Math.min(19,Number(document.getElementById('start').value)||0));
+ let target=Math.max(1,Math.min(20,Number(document.getElementById('target').value)||1));
+ if(target<=start){target=start+1;document.getElementById('target').value=target}
+ const p=vals();
+ const q=runProbability(start,target,p);
+ document.getElementById('expected').textContent=fmt(expectedAttempts(start,target,p));
+ document.getElementById('runprob').textContent=(q*100).toFixed(6)+'%';
+ for(const [id,x] of [['p50',.5],['p90',.9],['p95',.95],['p99',.99]]){
+   const n=need(x,start,target,p);document.getElementById(id).textContent=n===null?'∞':fmt(n);
+ }
+ let h='',c=1;
+ for(let i=start;i<target;i++){
+   c*=p[i];
+   h+=`<tr><td>+${i} → +${i+1}</td><td>${(p[i]*100).toFixed(1)}%</td><td>${(c*100).toFixed(6)}%</td></tr>`;
+ }
+ document.getElementById('resultTable').innerHTML=h;
 }
-document.getElementById('calc').onclick=calc;document.querySelectorAll('input').forEach(x=>x.addEventListener('change',calc));calc();
+document.getElementById('calc').onclick=calc;
+document.querySelectorAll('input').forEach(x=>x.addEventListener('change',calc));
+calc();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
-</script></body></html>
+</script>
+</body></html>
