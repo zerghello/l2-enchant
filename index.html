@@ -50,8 +50,14 @@ table{width:100%;border-collapse:collapse}td,th{padding:8px 3px;text-align:left;
 const defaults=[50,35,25,15,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10];
 const rows=document.getElementById('rows');
 for(let i=0;i<20;i++){let d=document.createElement('div');d.className='r';d.innerHTML='<span>+'+i+' → +'+(i+1)+'</span><input id="p'+i+'" type="number" min="0" max="100" step=".1" value="'+defaults[i]+'"><input id="fee'+i+'" type="number" min="0" step="1" placeholder="Цена синтеза"><input id="item'+i+'" type="number" min="0" step="1" placeholder="Цена 2-го предмета">';rows.appendChild(d)}
-function probs(){return Array.from({length:20},(_,i)=>Math.max(0,Math.min(100,Number(document.getElementById('p'+i).value)||0))/100)}
-function price(id){let v=document.getElementById(id).value;return v===''?0:Math.max(0,Number(v)||0)}
+function num(id){
+ let v=String(document.getElementById(id)?.value??'').trim().replace(',','.');
+ if(v==='') return 0;
+ const n=Number(v);
+ return Number.isFinite(n)?n:0;
+}
+function probs(){return Array.from({length:20},(_,i)=>Math.max(0,Math.min(100,num('p'+i)))/100)}
+function price(id){return Math.max(0,num(id))}
 function fmt(n){return Number.isFinite(n)?Math.round(n).toLocaleString('ru-RU'):'∞'}
 function product(s,t,p){let q=1;for(let i=s;i<t;i++)q*=p[i];return q}
 
@@ -96,15 +102,25 @@ function avgCost(s,t,p,keep){
  return total
 }
 function calc(){
- let s=Math.max(0,Math.min(19,Number(document.getElementById('start').value)||0)),t=Math.max(1,Math.min(20,Number(document.getElementById('target').value)||1));
+ let s=Math.floor(Math.max(0,Math.min(19,num('start'))));
+ let t=Math.floor(Math.max(1,Math.min(20,num('target'))));
  if(t<=s){t=s+1;document.getElementById('target').value=t}
  const p=probs(),keepOn=document.getElementById('keep').checked,q=product(s,t,p);
- document.getElementById('expected').textContent=fmt(calcExpected(s,t,p,keepOn));
+ const exp=calcExpected(s,t,p,keepOn);
+ document.getElementById('expected').textContent=Number.isFinite(exp)?fmt(exp):'∞';
  document.getElementById('run').textContent=(q*100).toFixed(6)+'%';
- document.getElementById('avgcost').textContent=fmt(avgCost(s,t,p,keepOn));
- for(const [id,x] of [['p50',.5],['p90',.9],['p95',.95],['p99',.99]]){let n=needed(x,s,t,p,keepOn);document.getElementById(id).textContent=n==null?'∞':fmt(n)}
+ const ac=avgCost(s,t,p,keepOn);
+ document.getElementById('avgcost').textContent=Number.isFinite(ac)?fmt(ac):'∞';
+ for(const [id,x] of [['p50',.5],['p90',.9],['p95',.95],['p99',.99]]){
+   let n=needed(x,s,t,p,keepOn);
+   document.getElementById(id).textContent=n==null?'∞':fmt(n)
+ }
  let h='',c=1;
- for(let i=s;i<t;i++){c*=p[i];let pr=price('fee'+i)+price('item'+i);h+='<tr><td>+'+i+' → +'+(i+1)+'</td><td>'+(p[i]*100).toFixed(1)+'%</td><td>'+(c*100).toFixed(6)+'%</td><td>'+(pr?fmt(pr):'—')+'</td></tr>'}
+ for(let i=s;i<t;i++){
+   c*=p[i];
+   let pr=price('fee'+i)+price('item'+i);
+   h+='<tr><td>+'+i+' → +'+(i+1)+'</td><td>'+(p[i]*100).toFixed(1)+'%</td><td>'+(c*100).toFixed(6)+'%</td><td>'+(pr?fmt(pr):'—')+'</td></tr>'
+ }
  document.getElementById('tbl').innerHTML=h
 }
 const calcBtn=document.getElementById('calc');calcBtn.onclick=calc;document.querySelectorAll('input').forEach(x=>x.addEventListener('change',calc));
