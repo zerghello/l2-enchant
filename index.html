@@ -76,20 +76,15 @@ function calcExpected(s,t,p,keep){
 function needed(x,s,t,p,keep){
  if(s>=t)return 0;
  if(!keep){const q=product(s,t,p);return q>0?Math.ceil(Math.log(1-x)/Math.log1p(-q)):null}
- // Retained progress: DP over levels; N <= 1e6 is enough for practical probabilities.
- let lo=0,hi=1;
- function prob(N){
-  let st=Array(t+1).fill(0);st[s]=1;
-  for(let k=0;k<N;k++){let nx=Array(t+1).fill(0);
-   for(let i=s;i<t;i++){let z=st[i],q=p[i]||0;nx[i]+=z*(1-q);nx[i+1]+=z*q}
-   nx[t]+=st[t];st=nx
-  }return st[t]
- }
- while(prob(hi)<x&&hi<1000000)hi*=2;
- if(prob(hi)<x)return null;
- while(lo<hi){let m=Math.floor((lo+hi)/2);if(prob(m)>=x)hi=m;else lo=m+1}return lo
+ // Fast matrix exponentiation for retained-progress mode.
+ const n=t-s+1;
+ let A=Array.from({length:n},()=>Array(n).fill(0));
+ for(let i=0;i<n-1;i++){A[i][i]=1-p[s+i];A[i][i+1]=p[s+i]} A[n-1][n-1]=1;
+ function mul(X,Y){const Z=Array.from({length:n},()=>Array(n).fill(0));for(let i=0;i<n;i++)for(let k=0;k<n;k++){const v=X[i][k];if(!v)continue;for(let j=0;j<n;j++)Z[i][j]+=v*Y[k][j]}return Z}
+ function pow(k){let R=Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>i===j?1:0)),B=A;while(k){if(k&1)R=mul(R,B);k=Math.floor(k/2);if(k)B=mul(B,B)}return R}
+ function prob(N){return pow(N)[0][n-1]}
+ let lo=0,hi=1;while(prob(hi)<x&&hi<100000000)hi*=2;if(prob(hi)<x)return null;while(lo<hi){const m=Math.floor((lo+hi)/2);if(prob(m)>=x)hi=m;else lo=m+1}return lo
 }
-
 function avgCost(s,t,p,keep){
  let total=0;
  if(keep){
@@ -136,7 +131,9 @@ function calc(){
  }
  document.getElementById('tbl').innerHTML=h
 }
-const calcBtn=document.getElementById('calc');calcBtn.onclick=calc;document.querySelectorAll('input').forEach(x=>x.addEventListener('input',calc));
+const calcBtn=document.getElementById('calc');calcBtn.onclick=calc;
+let calcTimer=null;
+document.querySelectorAll('input').forEach(x=>x.addEventListener('input',()=>{clearTimeout(calcTimer);calcTimer=setTimeout(calc,250)}));
 document.getElementById('sy').onclick=()=>{document.getElementById('sy').classList.add('active');document.getElementById('en').classList.remove('active')};
 document.getElementById('en').onclick=()=>{alert('Раздел заточки будет добавлен без изменения калькулятора синтеза.')};
 calc();
