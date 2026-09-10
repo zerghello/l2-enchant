@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
 <link rel="manifest" href="manifest.json">
-<title>L2 Calculator v12</title>
+<title>L2 Calculator v13</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#0b1020;color:#f3f4f6;font:15px system-ui,sans-serif}
@@ -71,7 +71,14 @@ th{color:#9ca3af;font-weight:500}
     <div><label>Сколько успешных предметов нужно</label><input id="needSuccess" type="number" min="1" step="1" value="1"></div>
   </div>
 </div>
-<label style="margin-top:14px">Параметры синтеза</label><div class="small">Шанс вводится непосредственно в процентах: 0.33 = 0,33%, 0.007 = 0,007%, 33 = 33%.</div>
+<label style="margin-top:14px">Общие цены</label>
+<div class="grid">
+  <div><label>Цена синтеза для всех уровней</label><input id="commonFee" type="number" min="0" step="1" placeholder="Например: 60000000"></div>
+  <div><label>Цена 2-го предмета для всех уровней</label><input id="commonItem" type="number" min="0" step="1" placeholder="Например: 10000000"></div>
+</div>
+<button type="button" class="calc" id="applyPrices" style="margin-top:8px">📋 Применить цены ко всем уровням</button>
+<div class="small">Можно оставить цены одинаковыми для всех уровней. Если нужны разные цены, их можно изменить прямо в таблице.</div>
+<label style="margin-top:14px">Параметры синтеза по уровням</label><div class="small">Шанс вводится непосредственно в процентах: 0.33 = 0,33%, 0.007 = 0,007%, 33 = 33%.</div>
 <div class="rows" id="rows"></div>
 <button type="button" class="calc" id="calc">Рассчитать</button>
 </div>
@@ -155,6 +162,19 @@ for(let i=0;i<20;i++){
   d.innerHTML='<span>+'+i+' → +'+(i+1)+'</span><input id="p'+i+'" type="number" min="0" max="100" step="0.1" value="'+synthDefaults[i]+'"><input id="fee'+i+'" type="number" min="0" step="1" placeholder="Цена синтеза"><input id="item'+i+'" type="number" min="0" step="1" placeholder="Цена 2-го предмета">';
   rows.appendChild(d);
 }
+
+
+/* -------- common synthesis prices -------- */
+document.getElementById('applyPrices').addEventListener('click',function(){
+  const feeRaw=String(document.getElementById('commonFee').value||'').trim();
+  const itemRaw=String(document.getElementById('commonItem').value||'').trim();
+  for(let i=0;i<20;i++){
+    document.getElementById('fee'+i).value=feeRaw;
+    document.getElementById('item'+i).value=itemRaw;
+  }
+  if(document.getElementById('breakMode').checked) breakCalc();
+  else synthCalc();
+});
 
 /* -------- enchant -------- */
 function enchantCalc(){
