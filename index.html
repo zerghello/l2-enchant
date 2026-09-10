@@ -34,7 +34,7 @@ table{width:100%;border-collapse:collapse}td,th{padding:8px 3px;text-align:left;
 <div class="card"><div class="stats">
 <div class="stat">Среднее синтезов<b id="expected">—</b></div>
 <div class="stat">Шанс полного прохода<b id="run">—</b></div>
-<div class="stat">Средняя стоимость<b id="avgcost">—</b></div>
+<div class="stat">Средняя стоимость<b id="avgcost">—</b><div class="small">учитывает цену каждой попытки</div></div>
 <div class="stat">50% вероятность<b id="p50">—</b></div>
 <div class="stat">90% вероятность<b id="p90">—</b></div>
 <div class="stat">95% вероятность<b id="p95">—</b></div>
@@ -93,11 +93,23 @@ function needed(x,s,t,p,keep){
 function avgCost(s,t,p,keep){
  let total=0;
  if(keep){
+  // Expected attempts on level i = probability to reach i / p[i].
   let reach=1;
-  for(let i=s;i<t;i++){if(p[i]<=0)return Infinity;let attempts=1/p[i];total+=reach*attempts*(price('fee'+i)+price('item'+i));reach*=p[i]}
+  for(let i=s;i<t;i++){
+   if(p[i]<=0)return Infinity;
+   const attemptsAtLevel=reach/p[i];
+   total+=attemptsAtLevel*(price('fee'+i)+price('item'+i));
+   reach*=p[i];
+  }
  }else{
-  let prod=1;
-  for(let i=s;i<t;i++){prod*=p[i];if(prod<=0)return Infinity;total+=(1/prod)*(price('fee'+i)+price('item'+i))}
+  // A failed full run resets to s. For a successful completion,
+  // expected attempts on transition i = 1 / product(p[i..t-1]).
+  for(let i=s;i<t;i++){
+   let tail=1;
+   for(let j=i;j<t;j++)tail*=p[j];
+   if(tail<=0)return Infinity;
+   total+=(1/tail)*(price('fee'+i)+price('item'+i));
+  }
  }
  return total
 }
