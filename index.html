@@ -60,7 +60,7 @@ function product(s,t,p){let q=1;for(let i=s;i<t;i++)q*=p[i];return q}
    keep=false: failure returns to start => each complete run has probability q,
    so expected attempts = 1/q.
 */
-function expected(s,t,p,keep){
+function calcExpected(s,t,p,keep){
  if(s>=t)return 0;
  if(keep){let e=0;for(let i=s;i<t;i++){if(p[i]<=0)return Infinity;e+=1/p[i]}return e}
  const q=product(s,t,p);return q>0?1/q:Infinity
@@ -96,18 +96,19 @@ function avgCost(s,t,p,keep){
  return total
 }
 function calc(){
- let s=Math.max(0,Math.min(19,Number(start.value)||0)),t=Math.max(1,Math.min(20,Number(target.value)||1));
- if(t<=s){t=s+1;target.value=t}
+ let s=Math.max(0,Math.min(19,Number(document.getElementById('start').value)||0)),t=Math.max(1,Math.min(20,Number(document.getElementById('target').value)||1));
+ if(t<=s){t=s+1;document.getElementById('target').value=t}
  const p=probs(),keepOn=document.getElementById('keep').checked,q=product(s,t,p);
- expected.textContent=fmt(expected(s,t,p,keepOn));
- run.textContent=(q*100).toFixed(6)+'%';
- avgcost.textContent=fmt(avgCost(s,t,p,keepOn));
+ document.getElementById('expected').textContent=fmt(calcExpected(s,t,p,keepOn));
+ document.getElementById('run').textContent=(q*100).toFixed(6)+'%';
+ document.getElementById('avgcost').textContent=fmt(avgCost(s,t,p,keepOn));
  for(const [id,x] of [['p50',.5],['p90',.9],['p95',.95],['p99',.99]]){let n=needed(x,s,t,p,keepOn);document.getElementById(id).textContent=n==null?'∞':fmt(n)}
  let h='',c=1;
  for(let i=s;i<t;i++){c*=p[i];let pr=price('fee'+i)+price('item'+i);h+='<tr><td>+'+i+' → +'+(i+1)+'</td><td>'+(p[i]*100).toFixed(1)+'%</td><td>'+(c*100).toFixed(6)+'%</td><td>'+(pr?fmt(pr):'—')+'</td></tr>'}
- tbl.innerHTML=h
+ document.getElementById('tbl').innerHTML=h
 }
-calcBtn=document.getElementById('calc');calcBtn.onclick=calc;document.querySelectorAll('input').forEach(x=>x.addEventListener('change',calc));
+const calcBtn=document.getElementById('calc');calcBtn.onclick=calc;document.querySelectorAll('input').forEach(x=>x.addEventListener('change',calc));
 document.getElementById('sy').onclick=()=>{document.getElementById('sy').classList.add('active');document.getElementById('en').classList.remove('active')};
 document.getElementById('en').onclick=()=>{alert('Раздел заточки будет добавлен без изменения калькулятора синтеза.')};
+calc();
 </script></body></html>
