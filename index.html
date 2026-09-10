@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
 <link rel="manifest" href="manifest.json">
-<title>L2 Calculator v10</title>
+<title>L2 Calculator v11</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#0b1020;color:#f3f4f6;font:15px system-ui,sans-serif}
@@ -29,7 +29,7 @@ button.calc{width:100%;padding:12px;border:0;border-radius:11px;background:#4f46
 table{width:100%;border-collapse:collapse}td,th{padding:8px 3px;text-align:left;border-bottom:1px solid #29334b}
 th{color:#9ca3af;font-weight:500}
 .small{font-size:12px;line-height:1.45;margin-top:10px}
-.hidden{display:none}
+.hidden{display:none}.decision{text-align:center;padding:22px 12px}.decisionIcon{font-size:42px}.decisionTitle{font-size:30px;font-weight:800;margin:7px 0}.decisionText{color:#cbd5e1}.good{border:1px solid #285c43}.bad{border:1px solid #69343b}.neutral{border:1px solid #4b5563}
 @media(max-width:520px){.grid,.stats{grid-template-columns:1fr}.r{grid-template-columns:55px 65px 1fr 1fr}}
 </style>
 </head>
@@ -38,7 +38,7 @@ th{color:#9ca3af;font-weight:500}
 
 <div class="tabs">
 <button type="button" class="tab active" id="en">⚔️ Заточка</button>
-<button type="button" class="tab" id="sy">🔮 Синтез</button>
+<button type="button" class="tab" id="sy">🔮 Синтез</button><button type="button" class="tab" id="wi">💰 Стоит ли?</button>
 </div>
 
 <section id="enchant">
@@ -85,6 +85,7 @@ th{color:#9ca3af;font-weight:500}
 <div class="small">Цена синтеза и цена 2-го предмета списываются при каждой попытке. Пустая цена не учитывается.</div>
 </div>
 </section>
+<section id="worthit" class="hidden"><div class="card"><h2 style="margin:2px 0 5px">💰 Стоит ли мне это делать?</h2><div class="small">Сравниваем среднюю стоимость получения из «Синтеза» с ценой продажи.</div><div class="grid" style="margin-top:14px"><div><label>Цена продажи готового предмета</label><input id="sale" type="number" min="0" step="1" placeholder="150000000"></div><div><label>Мой бюджет</label><input id="budget" type="number" min="0" step="1" placeholder="500000000"></div></div><div class="grid" style="margin-top:10px"><div><label>Доп. расходы</label><input id="extra" type="number" min="0" step="1" value="0"></div><div><label>Комиссия / налог, %</label><input id="tax" type="number" min="0" max="100" step="0.1" value="0"></div></div><button type="button" class="calc" id="worthCalc">Проверить</button></div><div id="decisionCard" class="card decision neutral"><div class="decisionIcon" id="decisionIcon">❓</div><div class="decisionTitle" id="decisionTitle">Заполни цену продажи</div><div class="decisionText" id="decisionText">Сначала рассчитай синтез.</div></div><div class="card"><div class="stats"><div class="stat">Средняя стоимость получения<b id="wCost">—</b></div><div class="stat">Цена после комиссии<b id="wNet">—</b></div><div class="stat">Ожидаемый результат<b id="wProfit">—</b></div><div class="stat">Бюджет<b id="wBudget">—</b></div></div><div class="small">🟢 Выгодно — цена продажи заметно выше средней стоимости. 🟡 На грани — разница небольшая. 🔴 Невыгодно — ниже средней стоимости.</div></div></section>
 </main>
 
 <script>
@@ -118,16 +119,10 @@ function clampLevel(id,max){
 }
 
 /* -------- tabs: no calculation, no alert, instant switching -------- */
-const en=document.getElementById('en'), sy=document.getElementById('sy');
-const enchant=document.getElementById('enchant'), synthesis=document.getElementById('synthesis');
-en.addEventListener('click',function(){
-  en.classList.add('active'); sy.classList.remove('active');
-  enchant.classList.remove('hidden'); synthesis.classList.add('hidden');
-});
-sy.addEventListener('click',function(){
-  sy.classList.add('active'); en.classList.remove('active');
-  synthesis.classList.remove('hidden'); enchant.classList.add('hidden');
-});
+const en=document.getElementById('en'), sy=document.getElementById('sy'), wi=document.getElementById('wi');
+const enchant=document.getElementById('enchant'), synthesis=document.getElementById('synthesis'), worthit=document.getElementById('worthit');
+function activateTab(which){[en,sy,wi].forEach(x=>x.classList.remove('active'));[enchant,synthesis,worthit].forEach(x=>x.classList.add('hidden'));which.classList.add('active');if(which===en)enchant.classList.remove('hidden');if(which===sy)synthesis.classList.remove('hidden');if(which===wi)worthit.classList.remove('hidden');}
+en.addEventListener('click',()=>activateTab(en));sy.addEventListener('click',()=>activateTab(sy));wi.addEventListener('click',()=>activateTab(wi));
 
 /* -------- build rows -------- */
 const erows=document.getElementById('erows');
@@ -252,6 +247,8 @@ function retainedNeeded(s,t,p,target){
 }
 
 document.getElementById('calc').addEventListener('click',synthCalc);
+document.getElementById('worthCalc').addEventListener('click',function(){const raw=document.getElementById('avgcost').textContent.replace(/[^0-9,.-]/g,'').replace(',','.').replace(/\s/g,'');const avg=Number(raw);const sale=price('sale'),extra=price('extra'),tax=Math.max(0,Math.min(100,val('tax')))/100,budget=price('budget');const dc=document.getElementById('decisionCard'),di=document.getElementById('decisionIcon'),dt=document.getElementById('decisionTitle'),dx=document.getElementById('decisionText');if(!Number.isFinite(avg)||avg<=0||sale<=0){document.getElementById('wCost').textContent='—';document.getElementById('wNet').textContent='—';document.getElementById('wProfit').textContent='—';document.getElementById('wBudget').textContent=budget?fmt(budget):'—';dc.className='card decision neutral';di.textContent='❓';dt.textContent='Сначала рассчитай синтез';dx.textContent='Во вкладке «Синтез» нажми «Рассчитать», затем укажи цену продажи.';return;}const net=sale*(1-tax)-extra,profit=net-avg;document.getElementById('wCost').textContent=fmt(avg);document.getElementById('wNet').textContent=fmt(net);document.getElementById('wProfit').textContent=(profit>=0?'+':'')+fmt(profit);document.getElementById('wBudget').textContent=budget?fmt(budget):'—';if(profit>avg*.1){dc.className='card decision good';di.textContent='🟢';dt.textContent='ВЫГОДНО';dx.textContent='Цена продажи заметно выше средней стоимости получения.'}else if(profit>=0){dc.className='card decision neutral';di.textContent='🟡';dt.textContent='НА ГРАНИ';dx.textContent='Средняя прибыль небольшая.'}else{dc.className='card decision bad';di.textContent='🔴';dt.textContent='НЕВЫГОДНО';dx.textContent='Средняя стоимость получения выше цены продажи.'}});
+
 
 /* Initial calculation only once. Inputs do NOT trigger expensive calculations.
    This is intentional so the Android keyboard opens immediately. */
