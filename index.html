@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
 <link rel="manifest" href="manifest.json">
-<title>L2 Calculator</title>
+<title>L2 Calculator v9</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#0b1020;color:#f3f4f6;font:15px system-ui,sans-serif}
@@ -102,7 +102,12 @@ function val(id){
   const n=Number(s);
   return Number.isFinite(n)?n:0;
 }
-function pct(id){return Math.max(0,Math.min(100,val(id)))/100}
+function pct(id){
+  const n=val(id);
+  if(n<=0)return 0;
+  /* Accept both formats: 0.33 = 33%, 33 = 33%. */
+  return n<=1 ? Math.min(1,n) : Math.min(100,n)/100;
+}
 function price(id){return Math.max(0,val(id))}
 function fmt(n){return Number.isFinite(n)?n.toLocaleString('ru-RU',{maximumFractionDigits:2}):'∞'}
 function clampLevel(id,max){
@@ -175,17 +180,21 @@ function synthCalc(){
   */
   let cost=0;
   if(keep){
-    let reach=1;
+    // Failure keeps the current level.
+    // Each transition i needs exactly 1/p[i] attempts on average.
+    // Its per-attempt cost is fee + second-item price.
     for(let i=s;i<t;i++){
       if(p[i]<=0){cost=Infinity;break;}
-      cost += (reach/p[i])*(price('fee'+i)+price('item'+i));
-      reach*=p[i];
+      cost += (1/p[i])*(price('fee'+i)+price('item'+i));
     }
   }else{
-    for(let i=s;i<t;i++){
-      let tail=1;
-      for(let j=i;j<t;j++)tail*=p[j];
-      if(tail<=0){cost=Infinity;break;}
+    // Failure resets to START.
+    // A transition i is reached once per successful prefix,
+    // so expected attempts spent on that transition are 1/(p[i]*...*p[t-1]).
+    let tail=1;
+    for(let i=t-1;i>=s;i--){
+      if(p[i]<=0){cost=Infinity;break;}
+      tail*=p[i];
       cost += (1/tail)*(price('fee'+i)+price('item'+i));
     }
   }
@@ -216,33 +225,26 @@ function synthCalc(){
 }
 
 function retainedNeeded(s,t,p,target){
-  /* No matrix exponentiation. Binary search uses repeated scalar DP.
-     For normal L2 targets this is fast and bounded. */
-  const maxN=200000;
-  function successProb(N){
-    const m=t-s+1;
-    let cur=new Float64Array(m);
-    cur[0]=1;
-    for(let step=0;step<N;step++){
-      const next=new Float64Array(m);
-      next[m-1]=cur[m-1];
-      for(let k=0;k<m-1;k++){
-        next[k]+=cur[k]*(1-p[s+k]);
-        next[k+1]+=cur[k]*p[s+k];
-      }
-      cur=next;
-      if(cur[m-1]>=target)return true;
-    }
-    return cur[m-1]>=target;
+  const m=t-s+1;
+  function mul(A,B){
+    const C=Array.from({length:m},()=>Array(m).fill(0));
+    for(let i=0;i<m;i++)for(let k=0;k<m;k++)if(A[i][k])
+      for(let j=0;j<m;j++)if(B[k][j])C[i][j]+=A[i][k]*B[k][j];
+    return C;
   }
+  function pow(A,n){
+    let R=Array.from({length:m},(_,i)=>Array.from({length:m},(_,j)=>i===j?1:0));
+    while(n>0){if(n%2)R=mul(R,A);A=mul(A,A);n=Math.floor(n/2);}
+    return R;
+  }
+  const M=Array.from({length:m},()=>Array(m).fill(0));
+  M[m-1][m-1]=1;
+  for(let k=0;k<m-1;k++){M[k][k]=1-p[s+k];M[k][k+1]=p[s+k];}
+  function ok(n){return pow(M,n)[0][m-1]>=target;}
   let lo=0,hi=1;
-  while(hi<maxN && !successProb(hi))hi*=2;
-  if(hi>maxN)hi=maxN;
-  if(!successProb(hi))return Infinity;
-  while(lo<hi){
-    const mid=Math.floor((lo+hi)/2);
-    if(successProb(mid))hi=mid; else lo=mid+1;
-  }
+  while(hi<1000000000 && !ok(hi))hi*=2;
+  if(!ok(hi))return Infinity;
+  while(lo<hi){const mid=Math.floor((lo+hi)/2);if(ok(mid))hi=mid;else lo=mid+1;}
   return lo;
 }
 
