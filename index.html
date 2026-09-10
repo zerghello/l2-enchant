@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
 <link rel="manifest" href="manifest.json">
-<title>L2 Calculator v9</title>
+<title>L2 Calculator v10</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#0b1020;color:#f3f4f6;font:15px system-ui,sans-serif}
@@ -64,7 +64,7 @@ th{color:#9ca3af;font-weight:500}
 <div><label>Целевой уровень</label><input id="target" type="number" min="1" max="20" value="6"></div>
 </div>
 <label class="switch"><input id="keep" type="checkbox"> <span>При неудаче сохранить текущий уровень</span></label>
-<label style="margin-top:14px">Параметры синтеза</label>
+<label style="margin-top:14px">Параметры синтеза</label><div class="small">Шанс вводится непосредственно в процентах: 0.33 = 0,33%, 0.007 = 0,007%, 33 = 33%.</div>
 <div class="rows" id="rows"></div>
 <button type="button" class="calc" id="calc">Рассчитать</button>
 </div>
@@ -103,10 +103,13 @@ function val(id){
   return Number.isFinite(n)?n:0;
 }
 function pct(id){
-  const n=val(id);
-  if(n<=0)return 0;
-  /* Accept both formats: 0.33 = 33%, 33 = 33%. */
-  return n<=1 ? Math.min(1,n) : Math.min(100,n)/100;
+  const el=document.getElementById(id);
+  if(!el)return 0;
+  const raw=String(el.value??'').trim().replace(',', '.');
+  if(raw==='')return 0;
+  const n=Number(raw);
+  if(!Number.isFinite(n))return 0;
+  return Math.max(0,Math.min(100,n))/100;
 }
 function price(id){return Math.max(0,val(id))}
 function fmt(n){return Number.isFinite(n)?n.toLocaleString('ru-RU',{maximumFractionDigits:2}):'∞'}
