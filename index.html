@@ -45,7 +45,7 @@ th{color:#9ca3af;font-weight:500}
 <div class="card">
 <div class="grid">
 <div><label>Стартовый уровень (сброс)</label><input id="estart" type="number" min="0" max="19" value="0"></div>
-<div><label>Целевой уровень</label><input id="etarget" type="number" min="1" max="20" value="6"></div>
+<div><label>Целевой уровень</label><input id="etarget" type="number" min="1" max="30" value="6"></div>
 </div>
 <label class="switch"><input id="useLuc" type="checkbox"> <span>🍀 Применить LUC (УДЧ) к расчёту</span></label>
 <div id="lucFields" class="card hidden" style="margin:10px 0 0;padding:12px;background:#0e1527">
@@ -59,7 +59,7 @@ th{color:#9ca3af;font-weight:500}
   <input id="commonEnchantChance" type="number" min="0" max="100" step="0.001" placeholder="Например: 0.33">
   <button type="button" class="calc" id="applyEnchantChance" style="margin-top:0;min-width:210px">🎯 Применить шанс ко всем</button>
 </div>
-<div class="small">Введите шанс и нажмите кнопку — он будет установлен для всех переходов +0 → +1 ... +19 → +20.</div>
+<div class="small">Введите шанс и нажмите кнопку — он будет установлен для всех переходов +0 → +1 ... +29 → +30.</div>
 <label style="margin-top:14px">Шанс заточки по уровням, %</label>
 <div class="rows" id="erows"></div>
 <button type="button" class="calc" id="ecalc">Рассчитать</button>
@@ -99,7 +99,7 @@ th{color:#9ca3af;font-weight:500}
 <div class="card">
 <div class="grid">
 <div><label>Стартовый уровень (сброс)</label><input id="start" type="number" min="0" max="19" value="0"></div>
-<div><label>Целевой уровень</label><input id="target" type="number" min="1" max="20" value="6"></div>
+<div><label>Целевой уровень</label><input id="target" type="number" min="1" max="30" value="6"></div>
 </div>
 <label class="switch"><input id="keep" type="checkbox"> <span>При неудаче сохранить текущий уровень</span></label>
 <label class="switch"><input id="breakMode" type="checkbox"> <span>💥 При неудаче предмет ломается</span></label>
@@ -234,7 +234,7 @@ document.getElementById('applyPrices').addEventListener('click',function(){
 document.getElementById('applyEnchantChance').addEventListener('click',function(){
   const raw=String(document.getElementById('commonEnchantChance').value||'').trim();
   if(raw==='') return;
-  for(let i=0;i<20;i++) document.getElementById('ep'+i).value=raw;
+  for(let i=0;i<30;i++) document.getElementById('ep'+i).value=raw;
   enchantCalc();
 });
 
