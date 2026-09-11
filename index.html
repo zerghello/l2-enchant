@@ -73,41 +73,10 @@ th{color:#9ca3af;font-weight:500}
 <div class="small">Введите шанс и нажмите кнопку — он будет установлен для всех переходов +0 → +1 ... +29 → +30.</div>
 <label style="margin-top:14px">Шанс заточки по уровням, %</label>
 <div class="level-groups" id="erows">
-  <details class="level-group" open><summary>⚔️ Уровни +0 → +10</summary><div class="group-body"><div class="rows" id="erows1"></div></div></details>
-  <details class="level-group"><summary>⚔️ Уровни +11 → +20</summary><div class="group-body"><div class="rows" id="erows2"></div></div></details>
-  <details class="level-group"><summary>⚔️ Уровни +21 → +30</summary><div class="group-body"><div class="rows" id="erows3"></div></div></details>
+  <details class="level-group" open><summary>⚔️ Заточка +0 → +10</summary><div class="group-body"><div class="rows" id="erows1"></div></div></details>
+  <details class="level-group"><summary>⚔️ Заточка +10 → +20</summary><div class="group-body"><div class="rows" id="erows2"></div></div></details>
+  <details class="level-group"><summary>⚔️ Заточка +20 → +30</summary><div class="group-body"><div class="rows" id="erows3"></div></div></details>
 </div>
-<button type="button" class="calc" id="ecalc">Рассчитать</button>
-</div>
-<div class="card">
-  <h3 style="margin:2px 0 8px">📦 Расчёт партии предметов</h3>
-  <div class="grid">
-    <div><label>Количество предметов</label><input id="enStock" type="number" min="1" step="1" value="100"></div>
-    <div><label>Режим при неудаче</label>
-      <select id="enBreakMode" style="width:100%;padding:10px;border-radius:10px;border:1px solid #33415f;background:#0e1527;color:#fff;font-size:16px">
-        <option value="break">💥 Предмет ломается</option>
-        <option value="keep">🛡️ Предмет не ломается</option>
-      </select>
-    </div>
-  </div>
-  <button type="button" class="calc" id="enBatchCalc">Рассчитать партию</button>
-</div>
-<div id="enBatchCard" class="card hidden">
-  <div class="stats">
-    <div class="stat">Ожидаемо достигнут +цели<b id="enBatchFinal">—</b></div>
-    <div class="stat">Ожидаемо сломается<b id="enBatchLost">—</b></div>
-    <div class="stat">Всего попыток партии<b id="enBatchAttempts">—</b></div>
-    <div class="stat">Неудачных попыток<b id="enBatchFails">—</b></div>
-  </div>
-  <div style="overflow:auto;margin-top:12px">
-    <table><thead><tr><th>Переход</th><th>Эфф. шанс</th><th>Дошли</th><th>Сломалось</th><th>Попыток</th></tr></thead><tbody id="enBatchTbl"></tbody></table>
-  </div>
-  <div class="small" id="enBatchNote">Количество рассчитывается как математическое ожидание. При режиме «ломается» каждый предмет имеет одну попытку на данный переход: неудача уничтожает предмет. При режиме «не ломается» неудача оставляет предмет на текущем уровне, поэтому каждый предмет продолжает попытки до успеха.</div>
-</div>
-<div class="card"><div class="stats">
-<div class="stat">Среднее попыток<b id="eexpected">—</b></div>
-<div class="stat">Шанс полного прохода<b id="erun">—</b></div>
-</div></div>
 </section>
 
 <section id="synthesis" class="hidden">
@@ -139,27 +108,11 @@ th{color:#9ca3af;font-weight:500}
 </div>
 <div class="small">Можно оставить цены одинаковыми для всех уровней. Если нужны разные цены, их можно изменить прямо в таблице.</div>
 <label style="margin-top:14px">Параметры синтеза по уровням</label><div class="small">Шанс вводится непосредственно в процентах: 0.33 = 0,33%, 0.007 = 0,007%, 33 = 33%.</div>
-<div class="rows" id="rows"></div>
-<button type="button" class="calc" id="calc">Рассчитать</button>
+<div class="level-groups" id="rows">
+  <details class="level-group" open><summary>🔮 Синтез +0 → +10</summary><div class="group-body"><div class="rows" id="rows1"></div></div></details>
+  <details class="level-group"><summary>🔮 Синтез +10 → +20</summary><div class="group-body"><div class="rows" id="rows2"></div></div></details>
+  <details class="level-group"><summary>🔮 Синтез +20 → +30</summary><div class="group-body"><div class="rows" id="rows3"></div></div></details>
 </div>
-
-<div id="breakStats" class="card hidden"><div class="stats">
-<div class="stat">Шанс получить хотя бы 1<b id="bAtLeast">—</b></div>
-<div class="stat">Шанс не получить ни одного<b id="bNone">—</b></div>
-<div class="stat">Среднее успехов<b id="bMean">—</b></div>
-<div class="stat">Шанс получить нужное количество<b id="bNeed">—</b></div>
-</div>
-<div class="small">При режиме «ломается» каждая попытка уничтожает исходный предмет при неудаче. Расчёт использует биномиальное распределение.</div></div>
-
-<div class="card"><div class="stats">
-<div class="stat">Среднее синтезов<b id="expected">—</b></div><b id="expected">—</b></div>
-<div class="stat">Шанс полного прохода<b id="run">—</b></div>
-<div class="stat">Средняя стоимость<b id="avgcost">—</b></div>
-<div class="stat">50% вероятность<b id="p50">—</b></div>
-<div class="stat">90% вероятность<b id="p90">—</b></div>
-<div class="stat">95% вероятность<b id="p95">—</b></div>
-<div class="stat">99% вероятность<b id="p99">—</b></div>
-</div></div>
 
 <div class="card"><h3>Расчёт по уровням</h3>
 <table><thead><tr><th>Переход</th><th>Шанс</th><th>Накопленный</th><th>Цена</th></tr></thead>
@@ -213,14 +166,14 @@ for(let i=0;i<30;i++){
   d.className='r';
   d.style.gridTemplateColumns='65px 1fr';
   d.innerHTML='<span>+'+i+' → +'+(i+1)+'</span><input id="ep'+i+'" type="number" min="0" max="100" step="0.1" value="'+enchDefaults[i]+'">';
-  erows.appendChild(d);
+  document.getElementById(i<10?'erows1':(i<20?'erows2':'erows3')).appendChild(d);
 }
 const rows=document.getElementById('rows');
 for(let i=0;i<30;i++){
   const d=document.createElement('div');
   d.className='r';
   d.innerHTML='<span>+'+i+' → +'+(i+1)+'</span><input id="p'+i+'" type="number" min="0" max="100" step="0.1" value="'+synthDefaults[i]+'"><input id="fee'+i+'" type="number" min="0" step="1" placeholder="Цена синтеза"><input id="item'+i+'" type="number" min="0" step="1" placeholder="Цена 2-го предмета">';
-  rows.appendChild(d);
+  document.getElementById(i<10?'rows1':(i<20?'rows2':'rows3')).appendChild(d);
 }
 
 
