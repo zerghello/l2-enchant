@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
 <link rel="manifest" href="manifest.json">
-<title>L2 Calculator v14</title>
+<title>L2 Calculator v15 — LUC</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#0b1020;color:#f3f4f6;font:15px system-ui,sans-serif}
@@ -46,6 +46,13 @@ th{color:#9ca3af;font-weight:500}
 <div class="grid">
 <div><label>Стартовый уровень (сброс)</label><input id="estart" type="number" min="0" max="19" value="0"></div>
 <div><label>Целевой уровень</label><input id="etarget" type="number" min="1" max="20" value="6"></div>
+</div>
+<label class="switch"><input id="useLuc" type="checkbox"> <span>🍀 Применить LUC (УДЧ) к расчёту</span></label>
+<div id="lucFields" class="card hidden" style="margin:10px 0 0;padding:12px;background:#0e1527">
+  <label>Количество Удачи (LUC / УДЧ)</label>
+  <input id="luc" type="number" min="0" max="200" step="1" value="120">
+  <div class="stat" style="margin-top:10px">Шанс срабатывания Клевера<b id="lucChance">—</b></div>
+  <div class="small">Расчёт использует современные экспериментальные точки: 90 → 4,90%; 105 → 7,07%; 115 → 9,33%; 119+ → около 10%. Между точками используется линейная интерполяция, после 119 LUC — плато около 10%.</div>
 </div>
 <label style="margin-top:14px">Шанс заточки по уровням, %</label>
 <div class="rows" id="erows"></div>
@@ -193,14 +200,49 @@ document.getElementById('applyPrices').addEventListener('click',function(){
 });
 
 /* -------- enchant -------- */
+/* -------- LUC / Lucky Clover --------
+   Modern post-PATCH Craft experiments give measured points:
+   90=4.90%, 105=7.07%, 115=9.33%, 119=10.31%, 125=10.28%, 130=10.40%.
+   For the calculator we use a practical empirical curve: linear interpolation
+   between measured points and a ~10% plateau from 119 LUC onward.
+   This is an empirical approximation, not an official published formula. */
+function lucChancePercent(luc){
+  const x=Math.max(0,Math.min(200,Number(luc)||0));
+  const pts=[[0,0],[90,4.90],[105,7.07],[115,9.33],[119,10.00]];
+  if(x>=119)return 10.00;
+  for(let i=1;i<pts.length;i++){
+    const [x1,y1]=pts[i-1], [x2,y2]=pts[i];
+    if(x<=x2)return y1+(y2-y1)*(x-x1)/(x2-x1);
+  }
+  return 0;
+}
+function getLucChance(){
+  return document.getElementById('useLuc').checked ? lucChancePercent(val('luc'))/100 : 0;
+}
 function enchantCalc(){
   let s=clampLevel('estart',19), t=Math.max(1,clampLevel('etarget',20));
   if(t<=s)t=s+1;
+  const luc=getLucChance();
+  document.getElementById('lucChance').textContent=(luc*100).toFixed(2)+'%';
   let q=1;
-  for(let i=s;i<t;i++)q*=pct('ep'+i);
+  for(let i=s;i<t;i++){
+    const base=pct('ep'+i);
+    // Clover is a parallel success event: if the normal enchant fails,
+    // Clover can make the transition succeed with 100% probability.
+    const effective=base + (1-base)*luc;
+    q*=effective;
+  }
   document.getElementById('erun').textContent=(q*100).toFixed(6)+'%';
   document.getElementById('eexpected').textContent=q>0?fmt(1/q):'∞';
 }
+const useLuc=document.getElementById('useLuc'), lucFields=document.getElementById('lucFields');
+useLuc.addEventListener('change',function(){
+  lucFields.classList.toggle('hidden',!this.checked);
+  enchantCalc();
+});
+document.getElementById('luc').addEventListener('input',function(){
+  if(useLuc.checked) enchantCalc();
+});
 document.getElementById('ecalc').addEventListener('click',enchantCalc);
 
 /* -------- synthesis: lightweight calculations only -------- */
