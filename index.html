@@ -54,6 +54,12 @@ th{color:#9ca3af;font-weight:500}
   <div class="stat" style="margin-top:10px">Шанс срабатывания Клевера<b id="lucChance">—</b></div>
   <div class="small">Расчёт использует современные экспериментальные точки: 90 → 4,90%; 105 → 7,07%; 115 → 9,33%; 119+ → около 10%. Между точками используется линейная интерполяция, после 119 LUC — плато около 10%.</div>
 </div>
+<label style="margin-top:14px">Одинаковый шанс заточки для всех уровней, %</label>
+<div style="display:flex;gap:8px">
+  <input id="commonEnchantChance" type="number" min="0" max="100" step="0.001" placeholder="Например: 0.33">
+  <button type="button" class="calc" id="applyEnchantChance" style="margin-top:0;min-width:210px">🎯 Применить шанс ко всем</button>
+</div>
+<div class="small">Введите шанс и нажмите кнопку — он будет установлен для всех переходов +0 → +1 ... +19 → +20.</div>
 <label style="margin-top:14px">Шанс заточки по уровням, %</label>
 <div class="rows" id="erows"></div>
 <button type="button" class="calc" id="ecalc">Рассчитать</button>
@@ -222,6 +228,14 @@ document.getElementById('applyPrices').addEventListener('click',function(){
   }
   if(document.getElementById('breakMode').checked) breakCalc();
   else synthCalc();
+});
+
+/* -------- common enchant chance -------- */
+document.getElementById('applyEnchantChance').addEventListener('click',function(){
+  const raw=String(document.getElementById('commonEnchantChance').value||'').trim();
+  if(raw==='') return;
+  for(let i=0;i<20;i++) document.getElementById('ep'+i).value=raw;
+  enchantCalc();
 });
 
 /* -------- enchant -------- */
