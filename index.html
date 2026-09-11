@@ -32,6 +32,17 @@ th{color:#9ca3af;font-weight:500}
 .hidden{display:none}.decision{text-align:center;padding:22px 12px}.decisionIcon{font-size:42px}.decisionTitle{font-size:30px;font-weight:800;margin:7px 0}.decisionText{color:#cbd5e1}.good{border:1px solid #285c43}.bad{border:1px solid #69343b}.neutral{border:1px solid #4b5563}
 @media(max-width:520px){.grid,.stats{grid-template-columns:1fr}.r{grid-template-columns:55px 65px 1fr 1fr}}
 </style>
+
+<style>
+.level-groups{margin-top:10px}
+.level-group{border:1px solid rgba(255,255,255,.12);border-radius:12px;margin:8px 0;overflow:hidden;background:rgba(255,255,255,.025)}
+.level-group summary{cursor:pointer;list-style:none;padding:12px 14px;font-weight:700;display:flex;align-items:center;justify-content:space-between;user-select:none}
+.level-group summary::-webkit-details-marker{display:none}
+.level-group summary:after{content:"＋";font-size:20px;opacity:.75}
+.level-group[open] summary:after{content:"−"}
+.level-group .group-body{padding:0 10px 10px}
+.level-group .rows{margin-top:0}
+</style>
 </head>
 <body><main>
 <h1>⚔️ L2 Calculator</h1><div class="sub">Заточка и синтез</div>
@@ -61,7 +72,11 @@ th{color:#9ca3af;font-weight:500}
 </div>
 <div class="small">Введите шанс и нажмите кнопку — он будет установлен для всех переходов +0 → +1 ... +29 → +30.</div>
 <label style="margin-top:14px">Шанс заточки по уровням, %</label>
-<div class="rows" id="erows"></div>
+<div class="level-groups" id="erows">
+  <details class="level-group" open><summary>⚔️ Уровни +0 → +10</summary><div class="group-body"><div class="rows" id="erows1"></div></div></details>
+  <details class="level-group"><summary>⚔️ Уровни +11 → +20</summary><div class="group-body"><div class="rows" id="erows2"></div></div></details>
+  <details class="level-group"><summary>⚔️ Уровни +21 → +30</summary><div class="group-body"><div class="rows" id="erows3"></div></div></details>
+</div>
 <button type="button" class="calc" id="ecalc">Рассчитать</button>
 </div>
 <div class="card">
