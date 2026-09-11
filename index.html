@@ -193,7 +193,7 @@ en.addEventListener('click',()=>activateTab(en));sy.addEventListener('click',()=
 
 /* -------- build rows -------- */
 const erows=document.getElementById('erows');
-for(let i=0;i<20;i++){
+for(let i=0;i<30;i++){
   const d=document.createElement('div');
   d.className='r';
   d.style.gridTemplateColumns='65px 1fr';
@@ -201,7 +201,7 @@ for(let i=0;i<20;i++){
   erows.appendChild(d);
 }
 const rows=document.getElementById('rows');
-for(let i=0;i<20;i++){
+for(let i=0;i<30;i++){
   const d=document.createElement('div');
   d.className='r';
   d.innerHTML='<span>+'+i+' → +'+(i+1)+'</span><input id="p'+i+'" type="number" min="0" max="100" step="0.1" value="'+synthDefaults[i]+'"><input id="fee'+i+'" type="number" min="0" step="1" placeholder="Цена синтеза"><input id="item'+i+'" type="number" min="0" step="1" placeholder="Цена 2-го предмета">';
@@ -214,7 +214,7 @@ for(let i=0;i<20;i++){
 document.getElementById('applyChance').addEventListener('click',function(){
   const raw=String(document.getElementById('commonChance').value||'').trim();
   if(raw==='') return;
-  for(let i=0;i<20;i++) document.getElementById('p'+i).value=raw;
+  for(let i=0;i<30;i++) document.getElementById('p'+i).value=raw;
   if(document.getElementById('breakMode').checked) breakCalc();
   else synthCalc();
 });
@@ -222,7 +222,7 @@ document.getElementById('applyChance').addEventListener('click',function(){
 document.getElementById('applyPrices').addEventListener('click',function(){
   const feeRaw=String(document.getElementById('commonFee').value||'').trim();
   const itemRaw=String(document.getElementById('commonItem').value||'').trim();
-  for(let i=0;i<20;i++){
+  for(let i=0;i<30;i++){
     document.getElementById('fee'+i).value=feeRaw;
     document.getElementById('item'+i).value=itemRaw;
   }
@@ -263,7 +263,7 @@ function enchantEffectiveChance(i,luc){
   return base + (1-base)*luc;
 }
 function enchantCalc(){
-  let s=clampLevel('estart',19), t=Math.max(1,clampLevel('etarget',20));
+  let s=clampLevel('estart',29), t=Math.max(1,clampLevel('etarget',30));
   if(t<=s)t=s+1;
   const luc=getLucChance();
   document.getElementById('lucChance').textContent=(luc*100).toFixed(2)+'%';
@@ -274,7 +274,7 @@ function enchantCalc(){
   if(!document.getElementById('enBatchCard').classList.contains('hidden')) enchantBatchCalc();
 }
 function enchantBatchCalc(){
-  let s=clampLevel('estart',19), t=Math.max(1,clampLevel('etarget',20));
+  let s=clampLevel('estart',29), t=Math.max(1,clampLevel('etarget',30));
   if(t<=s)t=s+1;
   const n=Math.max(1,Math.floor(val('enStock')));
   const luc=getLucChance();
@@ -331,11 +331,11 @@ document.getElementById('enBreakMode').addEventListener('change',enchantBatchCal
 
 /* -------- synthesis: lightweight calculations only -------- */
 function synthCalc(){
-  let s=clampLevel('start',19), t=Math.max(1,clampLevel('target',20));
+  let s=clampLevel('start',29), t=Math.max(1,clampLevel('target',30));
   if(t<=s)t=s+1;
   const keep=document.getElementById('keep').checked;
   const p=[];
-  for(let i=0;i<20;i++)p.push(pct('p'+i));
+  for(let i=0;i<30;i++)p.push(pct('p'+i));
 
   let q=1;
   for(let i=s;i<t;i++)q*=p[i];
@@ -458,7 +458,7 @@ function breakCalc(){
   const n=Math.max(0,Math.floor(val('stock')));
   const need=Math.max(1,Math.floor(val('needSuccess')));
   // Full path probability for one source item.
-  let s=clampLevel('start',19), t=Math.max(1,clampLevel('target',20));
+  let s=clampLevel('start',29), t=Math.max(1,clampLevel('target',30));
   if(t<=s)t=s+1;
   let q=1;
   for(let i=s;i<t;i++) q*=pct('p'+i);
