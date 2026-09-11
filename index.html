@@ -58,6 +58,24 @@ th{color:#9ca3af;font-weight:500}
 <div class="rows" id="erows"></div>
 <button type="button" class="calc" id="ecalc">Рассчитать</button>
 </div>
+<div class="card">
+  <h3 style="margin:2px 0 8px">📦 Расчёт партии предметов</h3>
+  <div class="grid">
+    <div><label>Количество предметов</label><input id="enStock" type="number" min="1" step="1" value="100"></div>
+    <div><label>Режим</label><div class="small" style="margin-top:10px">Одна попытка заточки каждого предмета по каждому переходу</div></div>
+  </div>
+  <button type="button" class="calc" id="enBatchCalc">Рассчитать партию</button>
+</div>
+<div id="enBatchCard" class="card hidden">
+  <div class="stats">
+    <div class="stat">Ожидаемо достигнут +цели<b id="enBatchFinal">—</b></div>
+    <div class="stat">Ожидаемо неудачных на пути<b id="enBatchLost">—</b></div>
+  </div>
+  <div style="overflow:auto;margin-top:12px">
+    <table><thead><tr><th>Уровень</th><th>Шанс дойти</th><th>Из партии</th><th>Потеряно на этом переходе</th></tr></thead><tbody id="enBatchTbl"></tbody></table>
+  </div>
+  <div class="small">Количество рассчитывается как математическое ожидание: например, при 100 предметах и вероятности 50% ожидаемо 50 предметов проходят переход. Это не гарантированное фактическое количество.</div>
+</div>
 <div class="card"><div class="stats">
 <div class="stat">Среднее попыток<b id="eexpected">—</b></div>
 <div class="stat">Шанс полного прохода<b id="erun">—</b></div>
@@ -219,21 +237,40 @@ function lucChancePercent(luc){
 function getLucChance(){
   return document.getElementById('useLuc').checked ? lucChancePercent(val('luc'))/100 : 0;
 }
+function enchantEffectiveChance(i,luc){
+  const base=pct('ep'+i);
+  return base + (1-base)*luc;
+}
 function enchantCalc(){
   let s=clampLevel('estart',19), t=Math.max(1,clampLevel('etarget',20));
   if(t<=s)t=s+1;
   const luc=getLucChance();
   document.getElementById('lucChance').textContent=(luc*100).toFixed(2)+'%';
   let q=1;
-  for(let i=s;i<t;i++){
-    const base=pct('ep'+i);
-    // Clover is a parallel success event: if the normal enchant fails,
-    // Clover can make the transition succeed with 100% probability.
-    const effective=base + (1-base)*luc;
-    q*=effective;
-  }
+  for(let i=s;i<t;i++) q*=enchantEffectiveChance(i,luc);
   document.getElementById('erun').textContent=(q*100).toFixed(6)+'%';
   document.getElementById('eexpected').textContent=q>0?fmt(1/q):'∞';
+  if(!document.getElementById('enBatchCard').classList.contains('hidden')) enchantBatchCalc();
+}
+function enchantBatchCalc(){
+  let s=clampLevel('estart',19), t=Math.max(1,clampLevel('etarget',20));
+  if(t<=s)t=s+1;
+  const n=Math.max(1,Math.floor(val('enStock')));
+  const luc=getLucChance();
+  let cumulative=1, previousCount=n, html='';
+  for(let i=s;i<t;i++){
+    const eff=enchantEffectiveChance(i,luc);
+    cumulative*=eff;
+    const reached=n*cumulative;
+    const failedAtThisStep=previousCount-reached;
+    html+='<tr><td>+'+i+' → +'+(i+1)+'</td><td>'+(cumulative*100).toFixed(4)+'%</td><td>'+fmt(reached)+'</td><td>'+fmt(Math.max(0,failedAtThisStep))+'</td></tr>';
+    previousCount=reached;
+  }
+  const finalCount=n*cumulative;
+  document.getElementById('enBatchFinal').textContent=fmt(finalCount);
+  document.getElementById('enBatchLost').textContent=fmt(Math.max(0,n-finalCount));
+  document.getElementById('enBatchTbl').innerHTML=html;
+  document.getElementById('enBatchCard').classList.remove('hidden');
 }
 const useLuc=document.getElementById('useLuc'), lucFields=document.getElementById('lucFields');
 useLuc.addEventListener('change',function(){
@@ -244,6 +281,8 @@ document.getElementById('luc').addEventListener('input',function(){
   if(useLuc.checked) enchantCalc();
 });
 document.getElementById('ecalc').addEventListener('click',enchantCalc);
+document.getElementById('enBatchCalc').addEventListener('click',enchantBatchCalc);
+document.getElementById('enStock').addEventListener('input',function(){if(!document.getElementById('enBatchCard').classList.contains('hidden')) enchantBatchCalc();});
 
 /* -------- synthesis: lightweight calculations only -------- */
 function synthCalc(){
