@@ -62,19 +62,26 @@ th{color:#9ca3af;font-weight:500}
   <h3 style="margin:2px 0 8px">📦 Расчёт партии предметов</h3>
   <div class="grid">
     <div><label>Количество предметов</label><input id="enStock" type="number" min="1" step="1" value="100"></div>
-    <div><label>Режим</label><div class="small" style="margin-top:10px">Одна попытка заточки каждого предмета по каждому переходу</div></div>
+    <div><label>Режим при неудаче</label>
+      <select id="enBreakMode" style="width:100%;padding:10px;border-radius:10px;border:1px solid #33415f;background:#0e1527;color:#fff;font-size:16px">
+        <option value="break">💥 Предмет ломается</option>
+        <option value="keep">🛡️ Предмет не ломается</option>
+      </select>
+    </div>
   </div>
   <button type="button" class="calc" id="enBatchCalc">Рассчитать партию</button>
 </div>
 <div id="enBatchCard" class="card hidden">
   <div class="stats">
     <div class="stat">Ожидаемо достигнут +цели<b id="enBatchFinal">—</b></div>
-    <div class="stat">Ожидаемо неудачных на пути<b id="enBatchLost">—</b></div>
+    <div class="stat">Ожидаемо сломается<b id="enBatchLost">—</b></div>
+    <div class="stat">Всего попыток партии<b id="enBatchAttempts">—</b></div>
+    <div class="stat">Неудачных попыток<b id="enBatchFails">—</b></div>
   </div>
   <div style="overflow:auto;margin-top:12px">
-    <table><thead><tr><th>Уровень</th><th>Шанс дойти</th><th>Из партии</th><th>Потеряно на этом переходе</th></tr></thead><tbody id="enBatchTbl"></tbody></table>
+    <table><thead><tr><th>Переход</th><th>Эфф. шанс</th><th>Дошли</th><th>Сломалось</th><th>Попыток</th></tr></thead><tbody id="enBatchTbl"></tbody></table>
   </div>
-  <div class="small">Количество рассчитывается как математическое ожидание: например, при 100 предметах и вероятности 50% ожидаемо 50 предметов проходят переход. Это не гарантированное фактическое количество.</div>
+  <div class="small" id="enBatchNote">Количество рассчитывается как математическое ожидание. При режиме «ломается» каждый предмет имеет одну попытку на данный переход: неудача уничтожает предмет. При режиме «не ломается» неудача оставляет предмет на текущем уровне, поэтому каждый предмет продолжает попытки до успеха.</div>
 </div>
 <div class="card"><div class="stats">
 <div class="stat">Среднее попыток<b id="eexpected">—</b></div>
@@ -257,21 +264,44 @@ function enchantBatchCalc(){
   if(t<=s)t=s+1;
   const n=Math.max(1,Math.floor(val('enStock')));
   const luc=getLucChance();
-  let cumulative=1, previousCount=n, html='';
+  const mode=document.getElementById('enBreakMode').value;
+  let current=n, cumulative=1, totalAttempts=0, totalFails=0, html='';
+
   for(let i=s;i<t;i++){
     const eff=enchantEffectiveChance(i,luc);
+    const before=current;
     cumulative*=eff;
-    const reached=n*cumulative;
-    const failedAtThisStep=previousCount-reached;
-    html+='<tr><td>+'+i+' → +'+(i+1)+'</td><td>'+(cumulative*100).toFixed(4)+'%</td><td>'+fmt(reached)+'</td><td>'+fmt(Math.max(0,failedAtThisStep))+'</td></tr>';
-    previousCount=reached;
+    let reached, broken, attempts, fails;
+    if(mode==='break'){
+      reached=before*eff;
+      broken=before-reached;
+      attempts=before;
+      fails=broken;
+      current=reached;
+    }else{
+      reached=before;
+      broken=0;
+      attempts=eff>0 ? before/eff : Infinity;
+      fails=eff>0 ? attempts-before : Infinity;
+      totalAttempts+=attempts;
+      totalFails+=fails;
+    }
+    if(mode==='break'){totalAttempts+=attempts; totalFails+=fails;}
+    html+='<tr><td>+'+i+' → +'+(i+1)+'</td><td>'+(eff*100).toFixed(4)+'%</td><td>'+fmt(reached)+'</td><td>'+fmt(broken)+'</td><td>'+fmt(attempts)+'</td></tr>';
   }
-  const finalCount=n*cumulative;
+  const finalCount=mode==='break'?current:n;
+  const lost=mode==='break'?n-finalCount:0;
   document.getElementById('enBatchFinal').textContent=fmt(finalCount);
-  document.getElementById('enBatchLost').textContent=fmt(Math.max(0,n-finalCount));
+  document.getElementById('enBatchLost').textContent=fmt(lost);
+  document.getElementById('enBatchAttempts').textContent=Number.isFinite(totalAttempts)?fmt(totalAttempts):'∞';
+  document.getElementById('enBatchFails').textContent=Number.isFinite(totalFails)?fmt(totalFails):'∞';
   document.getElementById('enBatchTbl').innerHTML=html;
+  document.getElementById('enBatchNote').textContent=mode==='break'
+    ? 'При режиме «ломается» неудачная заточка уничтожает предмет. Например, из 100 предметов при эффективном шансе 50% математически останется 50. При следующем переходе считаются уже эти 50.'
+    : 'При режиме «не ломается» неудачная заточка оставляет предмет на текущем уровне. Все предметы с ненулевым шансом в среднем в итоге доходят до цели; в таблице показано, сколько попыток потребуется.';
   document.getElementById('enBatchCard').classList.remove('hidden');
 }
+
 const useLuc=document.getElementById('useLuc'), lucFields=document.getElementById('lucFields');
 useLuc.addEventListener('change',function(){
   lucFields.classList.toggle('hidden',!this.checked);
@@ -283,6 +313,7 @@ document.getElementById('luc').addEventListener('input',function(){
 document.getElementById('ecalc').addEventListener('click',enchantCalc);
 document.getElementById('enBatchCalc').addEventListener('click',enchantBatchCalc);
 document.getElementById('enStock').addEventListener('input',function(){if(!document.getElementById('enBatchCard').classList.contains('hidden')) enchantBatchCalc();});
+document.getElementById('enBreakMode').addEventListener('change',enchantBatchCalc);
 
 /* -------- synthesis: lightweight calculations only -------- */
 function synthCalc(){
