@@ -58,8 +58,8 @@ th{color:#9ca3af;font-weight:500}
 <section id="enchant">
 <div class="card">
 <div class="grid">
-<div><label>Стартовый уровень (сброс)<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Уровень, с которого начинается расчёт. При сбросе неудача возвращает предмет на этот уровень.</span></span></label><input id="estart" type="number" min="0" max="39" value="0"></div>
-<div><label>Целевой уровень<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Уровень, которого нужно достичь. Например, +6 означает последовательное прохождение от стартового уровня до +6.</span></span></label><input id="etarget" type="number" min="1" max="40" value="6"></div>
+<div><label>Стартовый уровень (сброс)<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Уровень, с которого начинается расчёт. При сбросе неудача возвращает предмет на этот уровень.</span></span></label><input id="estart" type="number" min="0" max="31" value="0"></div>
+<div><label>Целевой уровень<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Уровень, которого нужно достичь. Например, +6 означает последовательное прохождение от стартового уровня до +6.</span></span></label><input id="etarget" type="number" min="1" max="32" value="6"></div>
 </div>
 <label class="switch"><input id="useLuc" type="checkbox"> <span>🍀 Применить LUC (УДЧ) к расчёту <span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Включает учёт срабатывания Клевера. Базовый шанс заточки при этом не изменяется напрямую.</span></span></span></label>
 <div id="lucFields" class="card hidden" style="margin:10px 0 0;padding:12px;background:#0e1527">
@@ -68,18 +68,18 @@ th{color:#9ca3af;font-weight:500}
   <div class="stat" style="margin-top:10px">Шанс срабатывания Клевера<b id="lucChance">—</b></div>
   <div class="small">Расчёт использует современные экспериментальные точки: 90 → 4,90%; 105 → 7,07%; 115 → 9,33%; 119+ → около 10%. Между точками используется линейная интерполяция, после 119 LUC — плато около 10%.</div>
 </div>
-<label style="margin-top:14px">Одинаковый шанс заточки для всех уровней, %<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Введите один шанс, например 0.33 = 0,33%, затем кнопка установит его для всех переходов +0→+1 ... +39→+40.</span></span></label>
+<label style="margin-top:14px">Одинаковый шанс заточки для всех уровней, %<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Введите один шанс, например 0.33 = 0,33%, затем кнопка установит его для всех переходов +0→+1 ... +31→+32.</span></span></label>
 <div style="display:flex;gap:8px">
   <input id="commonEnchantChance" type="number" min="0" max="100" step="0.001" placeholder="Например: 0.33">
   <button type="button" class="calc" id="applyEnchantChance" style="margin-top:0;min-width:210px">🎯 Применить шанс ко всем</button>
 </div>
-<div class="small">Введите шанс и нажмите кнопку — он будет установлен для всех переходов +0 → +1 ... +39 → +40.</div>
+<div class="small">Введите шанс и нажмите кнопку — он будет установлен для всех переходов +0 → +1 ... +31 → +32.</div>
 <label style="margin-top:14px">Шанс заточки по уровням, %<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Базовый шанс для каждого отдельного перехода. Значение вводится непосредственно в процентах: 0.33 = 0,33%.</span></span></label>
 <div class="level-groups" id="erows">
   <details class="level-group" open><summary>⚔️ Заточка +0 → +10</summary><div class="group-body"><div class="rows" id="erows1"></div></div></details>
   <details class="level-group"><summary>⚔️ Заточка +10 → +20</summary><div class="group-body"><div class="rows" id="erows2"></div></div></details>
   <details class="level-group"><summary>⚔️ Заточка +20 → +30</summary><div class="group-body"><div class="rows" id="erows3"></div></div></details>
-  <details class="level-group"><summary>⚔️ Заточка +30 → +40</summary><div class="group-body"><div class="rows" id="erows4"></div></div></details>
+  <details class="level-group"><summary>⚔️ Заточка +30 → +32</summary><div class="group-body"><div class="rows" id="erows4"></div></div></details>
 </div>
 <button type="button" class="calc" id="ecalc">Рассчитать</button>
 </div>
@@ -135,8 +135,8 @@ th{color:#9ca3af;font-weight:500}
 <section id="synthesis" class="hidden">
 <div class="card">
 <div class="grid">
-<div><label>Стартовый уровень (сброс)<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Уровень, с которого начинается расчёт. При сбросе неудача возвращает предмет на этот уровень.</span></span></label><input id="start" type="number" min="0" max="39" value="0"></div>
-<div><label>Целевой уровень<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Уровень, которого нужно достичь. Например, +6 означает последовательное прохождение от стартового уровня до +6.</span></span></label><input id="target" type="number" min="1" max="40" value="6"></div>
+<div><label>Стартовый уровень (сброс)<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Уровень, с которого начинается расчёт. При сбросе неудача возвращает предмет на этот уровень.</span></span></label><input id="start" type="number" min="0" max="30" value="0"></div>
+<div><label>Целевой уровень<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Уровень, которого нужно достичь. Например, +6 означает последовательное прохождение от стартового уровня до +6.</span></span></label><input id="target" type="number" min="1" max="31" value="6"></div>
 </div>
 <label class="switch"><input id="keep" type="checkbox"> <span>При неудаче сохранить текущий уровень <span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Неудача не сбрасывает уровень: предмет остаётся на текущем уровне и продолжает попытки.</span></span></span></label>
 <label class="switch"><input id="breakMode" type="checkbox"> <span>💥 При неудаче предмет ломается <span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Каждая неудача уничтожает предмет. Для партии рассчитывается вероятность прохождения всей цепочки.</span></span></span></label>
@@ -165,7 +165,7 @@ th{color:#9ca3af;font-weight:500}
   <details class="level-group" open><summary>🔮 Синтез +0 → +10</summary><div class="group-body"><div class="rows" id="rows1"></div></div></details>
   <details class="level-group"><summary>🔮 Синтез +10 → +20</summary><div class="group-body"><div class="rows" id="rows2"></div></div></details>
   <details class="level-group"><summary>🔮 Синтез +20 → +30</summary><div class="group-body"><div class="rows" id="rows3"></div></div></details>
-  <details class="level-group"><summary>🔮 Синтез +30 → +40</summary><div class="group-body"><div class="rows" id="rows4"></div></div></details>
+  <details class="level-group"><summary>🔮 Синтез +30 → +31</summary><div class="group-body"><div class="rows" id="rows4"></div></div></details>
 </div>
 <button type="button" class="calc" id="calc">Рассчитать</button>
 </div>
@@ -235,7 +235,7 @@ en.addEventListener('click',()=>activateTab(en));sy.addEventListener('click',()=
 
 /* -------- build rows -------- */
 const erows=document.getElementById('erows');
-for(let i=0;i<40;i++){
+for(let i=0;i<32;i++){
   const d=document.createElement('div');
   d.className='r';
   d.style.gridTemplateColumns='65px 1fr';
@@ -243,7 +243,7 @@ for(let i=0;i<40;i++){
   document.getElementById(i<10?'erows1':(i<20?'erows2':(i<30?'erows3':'erows4'))).appendChild(d);
 }
 const rows=document.getElementById('rows');
-for(let i=0;i<40;i++){
+for(let i=0;i<31;i++){
   const d=document.createElement('div');
   d.className='r';
   d.innerHTML='<span title="Переход между уровнями. Накопленный шанс показывает вероятность дойти до этого уровня через все предыдущие переходы.">+'+i+' → +'+(i+1)+'</span><input id="p'+i+'" title="Шанс успеха этого перехода в процентах. Например: 0.33 = 0,33%." type="number" min="0" max="100" step="0.1" value="'+synthDefaults[i]+'"><input id="fee'+i+'" title="Стоимость одной попытки синтеза на этом переходе." type="number" min="0" step="1" placeholder="Цена синтеза"><input id="item'+i+'" title="Стоимость второго предмета, расходуемого на одну попытку." type="number" min="0" step="1" placeholder="Цена 2-го предмета">';
@@ -256,7 +256,7 @@ for(let i=0;i<40;i++){
 document.getElementById('applyChance').addEventListener('click',function(){
   const raw=String(document.getElementById('commonChance').value||'').trim();
   if(raw==='') return;
-  for(let i=0;i<40;i++) document.getElementById('p'+i).value=raw;
+  for(let i=0;i<31;i++) document.getElementById('p'+i).value=raw;
   if(document.getElementById('breakMode').checked) breakCalc();
   else synthCalc();
 });
@@ -264,7 +264,7 @@ document.getElementById('applyChance').addEventListener('click',function(){
 document.getElementById('applyPrices').addEventListener('click',function(){
   const feeRaw=String(document.getElementById('commonFee').value||'').trim();
   const itemRaw=String(document.getElementById('commonItem').value||'').trim();
-  for(let i=0;i<40;i++){
+  for(let i=0;i<31;i++){
     document.getElementById('fee'+i).value=feeRaw;
     document.getElementById('item'+i).value=itemRaw;
   }
@@ -276,7 +276,7 @@ document.getElementById('applyPrices').addEventListener('click',function(){
 document.getElementById('applyEnchantChance').addEventListener('click',function(){
   const raw=String(document.getElementById('commonEnchantChance').value||'').trim();
   if(raw==='') return;
-  for(let i=0;i<40;i++) document.getElementById('ep'+i).value=raw;
+  for(let i=0;i<32;i++) document.getElementById('ep'+i).value=raw;
   enchantCalc();
 });
 
@@ -323,7 +323,7 @@ function binomialAtLeast(n,p,k){
   return Math.max(0,Math.min(1,1-sum));
 }
 function enchantProbabilityCalc(){
-  let s=clampLevel('estart',39), t=Math.max(1,clampLevel('etarget',40));
+  let s=clampLevel('estart',31), t=Math.max(1,clampLevel('etarget',32));
   if(t<=s)t=s+1;
   const n=Math.max(1,Math.floor(val('probStock')));
   const need=Math.max(1,Math.floor(val('probNeed')));
@@ -353,7 +353,7 @@ function enchantProbabilityCalc(){
   document.getElementById('probCard').classList.remove('hidden');
 }
 function enchantCalc(){
-  let s=clampLevel('estart',39), t=Math.max(1,clampLevel('etarget',40));
+  let s=clampLevel('estart',31), t=Math.max(1,clampLevel('etarget',32));
   if(t<=s)t=s+1;
   const luc=getLucChance();
   document.getElementById('lucChance').textContent=(luc*100).toFixed(2)+'%';
@@ -364,7 +364,7 @@ function enchantCalc(){
   if(!document.getElementById('enBatchCard').classList.contains('hidden')) enchantBatchCalc(); if(!document.getElementById('probCard').classList.contains('hidden')) enchantProbabilityCalc();
 }
 function enchantBatchCalc(){
-  let s=clampLevel('estart',39), t=Math.max(1,clampLevel('etarget',40));
+  let s=clampLevel('estart',31), t=Math.max(1,clampLevel('etarget',32));
   if(t<=s)t=s+1;
   const n=Math.max(1,Math.floor(val('enStock')));
   const luc=getLucChance();
@@ -425,11 +425,11 @@ document.getElementById('enBreakMode').addEventListener('change',enchantBatchCal
 
 /* -------- synthesis: lightweight calculations only -------- */
 function synthCalc(){
-  let s=clampLevel('start',39), t=Math.max(1,clampLevel('target',40));
+  let s=clampLevel('start',30), t=Math.max(1,clampLevel('target',31));
   if(t<=s)t=s+1;
   const keep=document.getElementById('keep').checked;
   const p=[];
-  for(let i=0;i<40;i++)p.push(pct('p'+i));
+  for(let i=0;i<31;i++)p.push(pct('p'+i));
 
   let q=1;
   for(let i=s;i<t;i++)q*=p[i];
@@ -552,7 +552,7 @@ function breakCalc(){
   const n=Math.max(0,Math.floor(val('stock')));
   const need=Math.max(1,Math.floor(val('needSuccess')));
   // Full path probability for one source item.
-  let s=clampLevel('start',39), t=Math.max(1,clampLevel('target',40));
+  let s=clampLevel('start',30), t=Math.max(1,clampLevel('target',31));
   if(t<=s)t=s+1;
   let q=1;
   for(let i=s;i<t;i++) q*=pct('p'+i);
