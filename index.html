@@ -157,7 +157,7 @@ th{color:#9ca3af;font-weight:500}
 <div class="card hidden" id="dropResultCard">
   <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
     <h3 style="margin:2px 0 8px">📊 Результат</h3>
-    <button type="button" class="secondary" id="clearDropLocks" style="margin:0">🔓 Снять все замочки</button>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button type="button" class="secondary" id="lockAllDrops" style="margin:0">🔒 Закрыть все</button><button type="button" class="secondary" id="clearDropLocks" style="margin:0">🔓 Открыть все</button><button type="button" class="secondary" id="clearAllDrops" style="margin:0">🧹 Очистить все</button></div>
   </div>
   <div style="overflow:auto">
     <table><thead><tr><th>Действия</th><th>Предмет</th><th>В час</th><th>В день</th><th>В неделю</th><th>В месяц</th></tr></thead><tbody id="dropResultTbl"></tbody></table>
@@ -645,11 +645,18 @@ function makeDropRow(){
   const row=document.createElement('div');
   row.className='dropRow';
   row.dataset.dropId='drop_'+(++dropRowSeq);
-  row.innerHTML='<button type="button" class="remove" title="Удалить строку" aria-label="Удалить строку">✕</button><input class="dname" type="text" placeholder="Название предмета"><input class="dqty" type="number" min="0" step="0.01" placeholder="Количество / час">';
+  row.innerHTML='<button type="button" class="remove" title="Очистить строку" aria-label="Очистить строку">✕</button><input class="dname" type="text" placeholder="Название предмета"><input class="dqty" type="number" min="0" step="0.01" placeholder="Количество / час">';
   document.getElementById('fixedDropRows').appendChild(row);
   row.querySelector('.remove').addEventListener('click',()=>{
-    lockedDropResults.delete(row.dataset.dropId);
-    row.remove();
+    const id=row.dataset.dropId;
+    if(lockedDropResults.has(id)) return;
+    const rows=[...document.querySelectorAll('#fixedDropRows .dropRow')];
+    if(rows[0]===row){
+      row.querySelector('.dname').value='';
+      row.querySelector('.dqty').value='';
+    }else{
+      row.remove();
+    }
     renderDropResults();
   });
 }
@@ -689,7 +696,7 @@ function renderDropResults(){
     tr.dataset.dropId=x.id;
     tr.innerHTML='<td><div class="dropActions">'+
       '<button type="button" class="dropLockBtn '+(isLocked?'is-locked':'')+'" title="'+(isLocked?'Открыть — снять фиксацию':'Закрыть — зафиксировать результат')+'" aria-label="'+(isLocked?'Открыть — снять фиксацию':'Закрыть — зафиксировать результат')+'">'+(isLocked?'🔒':'🔓')+'</button>'+
-      '<button type="button" class="dropDeleteBtn" title="Удалить строку" aria-label="Удалить строку">✕</button>'+
+      '<button type="button" class="dropDeleteBtn" title="'+(isLocked?'Сначала откройте замочек':'Удалить строку (первая строка очищается)')+'" aria-label="'+(isLocked?'Сначала откройте замочек':'Удалить строку (первая строка очищается)')+'" '+(isLocked?'disabled':'')+'>✕</button>'+
       '</div></td><td>'+escapeHtml(x.name)+'</td>'+vals.map(v=>'<td>'+fmt(v)+'</td>').join('');
     tbody.appendChild(tr);
   });
@@ -713,9 +720,16 @@ function unlockDropResult(id){
   renderDropResults();
 }
 function deleteDropResult(id){
-  lockedDropResults.delete(id);
+  if(lockedDropResults.has(id))return;
   const row=document.querySelector('#fixedDropRows .dropRow[data-drop-id="'+CSS.escape(id)+'"]');
-  if(row)row.remove();
+  if(!row)return;
+  const rows=[...document.querySelectorAll('#fixedDropRows .dropRow')];
+  if(rows[0]===row){
+    row.querySelector('.dname').value='';
+    row.querySelector('.dqty').value='';
+  }else{
+    row.remove();
+  }
   renderDropResults();
 }
 function dropCalc(){
@@ -731,9 +745,35 @@ function escapeHtml(str){
 }
 document.getElementById('addFixedDrop').addEventListener('click',makeDropRow);
 document.getElementById('dropCalc').addEventListener('click',dropCalc);
+document.getElementById('lockAllDrops').addEventListener('click',()=>{
+  document.querySelectorAll('#fixedDropRows .dropRow').forEach(row=>{
+    const id=row.dataset.dropId;
+    if(lockedDropResults.has(id))return;
+    const name=row.querySelector('.dname').value.trim();
+    const h=dropNumEl(row.querySelector('.dqty'));
+    if(!name && h===0)return;
+    lockedDropResults.set(id,{id,name:name||'Без названия',h,vals:dropResultValues({h})});
+    row.classList.add('locked');
+  });
+  renderDropResults();
+});
 document.getElementById('clearDropLocks').addEventListener('click',()=>{
   lockedDropResults.clear();
   document.querySelectorAll('#fixedDropRows .dropRow').forEach(r=>r.classList.remove('locked'));
+  renderDropResults();
+});
+document.getElementById('clearAllDrops').addEventListener('click',()=>{
+  const rows=[...document.querySelectorAll('#fixedDropRows .dropRow')];
+  rows.forEach((row,i)=>{
+    const id=row.dataset.dropId;
+    if(lockedDropResults.has(id))return;
+    if(i===0){
+      row.querySelector('.dname').value='';
+      row.querySelector('.dqty').value='';
+    }else{
+      row.remove();
+    }
+  });
   renderDropResults();
 });
 document.getElementById('dropResultTbl').addEventListener('click',e=>{
