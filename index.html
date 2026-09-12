@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
 <link rel="manifest" href="manifest.json">
-<title>L2 Calculator v15 — LUC</title>
+<title>L2 Calculator v25 — Info Tooltips</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#0b1020;color:#f3f4f6;font:15px system-ui,sans-serif}
@@ -21,6 +21,12 @@ h1{font-size:25px;margin:4px 0}.sub,.small{color:#9ca3af}
 .r span{font-size:13px}
 .r input{padding:8px;font-size:14px}
 label{display:block;color:#cbd5e1;font-size:13px;margin-bottom:5px}
+.info{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;margin-left:5px;border:1px solid #64748b;border-radius:50%;font-size:11px;font-weight:700;color:#cbd5e1;cursor:help;position:relative;vertical-align:middle}
+.info .tip{position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);width:250px;padding:9px 10px;border:1px solid #3b4868;border-radius:10px;background:#111827;color:#f3f4f6;font-size:12px;font-weight:400;line-height:1.4;text-align:left;box-shadow:0 8px 25px rgba(0,0,0,.35);opacity:0;visibility:hidden;pointer-events:none;z-index:100;transition:opacity .15s ease}
+.info:hover .tip,.info:focus .tip{opacity:1;visibility:visible}
+.info:focus{outline:2px solid #6366f1;outline-offset:2px}
+@media(max-width:520px){.info .tip{left:0;transform:none;width:220px}}
+
 input{width:100%;padding:10px;border-radius:10px;border:1px solid #33415f;background:#0e1527;color:#fff;font-size:16px}
 .switch{display:flex;align-items:center;gap:9px;margin-top:13px;color:#e5e7eb}
 .switch input{width:auto}
@@ -52,23 +58,23 @@ th{color:#9ca3af;font-weight:500}
 <section id="enchant">
 <div class="card">
 <div class="grid">
-<div><label>Стартовый уровень (сброс)</label><input id="estart" type="number" min="0" max="19" value="0"></div>
-<div><label>Целевой уровень</label><input id="etarget" type="number" min="1" max="30" value="6"></div>
+<div><label>Стартовый уровень (сброс)<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Уровень, с которого начинается расчёт. При сбросе неудача возвращает предмет на этот уровень.</span></span></label><input id="estart" type="number" min="0" max="19" value="0"></div>
+<div><label>Целевой уровень<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Уровень, которого нужно достичь. Например, +6 означает последовательное прохождение от стартового уровня до +6.</span></span></label><input id="etarget" type="number" min="1" max="30" value="6"></div>
 </div>
-<label class="switch"><input id="useLuc" type="checkbox"> <span>🍀 Применить LUC (УДЧ) к расчёту</span></label>
+<label class="switch"><input id="useLuc" type="checkbox"> <span>🍀 Применить LUC (УДЧ) к расчёту <span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Включает учёт срабатывания Клевера. Базовый шанс заточки при этом не изменяется напрямую.</span></span></span></label>
 <div id="lucFields" class="card hidden" style="margin:10px 0 0;padding:12px;background:#0e1527">
-  <label>Количество Удачи (LUC / УДЧ)</label>
+  <label>Количество Удачи (LUC / УДЧ)<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Ваш показатель LUC (УДЧ). В этой версии он влияет не на базовый шанс заточки, а на вероятность срабатывания Клевера.</span></span></label>
   <input id="luc" type="number" min="0" max="200" step="1" value="120">
   <div class="stat" style="margin-top:10px">Шанс срабатывания Клевера<b id="lucChance">—</b></div>
   <div class="small">Расчёт использует современные экспериментальные точки: 90 → 4,90%; 105 → 7,07%; 115 → 9,33%; 119+ → около 10%. Между точками используется линейная интерполяция, после 119 LUC — плато около 10%.</div>
 </div>
-<label style="margin-top:14px">Одинаковый шанс заточки для всех уровней, %</label>
+<label style="margin-top:14px">Одинаковый шанс заточки для всех уровней, %<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Введите один шанс, например 0.33 = 0,33%, затем кнопка установит его для всех переходов +0→+1 ... +29→+30.</span></span></label>
 <div style="display:flex;gap:8px">
   <input id="commonEnchantChance" type="number" min="0" max="100" step="0.001" placeholder="Например: 0.33">
   <button type="button" class="calc" id="applyEnchantChance" style="margin-top:0;min-width:210px">🎯 Применить шанс ко всем</button>
 </div>
 <div class="small">Введите шанс и нажмите кнопку — он будет установлен для всех переходов +0 → +1 ... +29 → +30.</div>
-<label style="margin-top:14px">Шанс заточки по уровням, %</label>
+<label style="margin-top:14px">Шанс заточки по уровням, %<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Базовый шанс для каждого отдельного перехода. Значение вводится непосредственно в процентах: 0.33 = 0,33%.</span></span></label>
 <div class="level-groups" id="erows">
   <details class="level-group" open><summary>⚔️ Заточка +0 → +10</summary><div class="group-body"><div class="rows" id="erows1"></div></div></details>
   <details class="level-group"><summary>⚔️ Заточка +10 → +20</summary><div class="group-body"><div class="rows" id="erows2"></div></div></details>
@@ -79,8 +85,8 @@ th{color:#9ca3af;font-weight:500}
 <div class="card">
   <h3 style="margin:2px 0 8px">📦 Расчёт партии предметов</h3>
   <div class="grid">
-    <div><label>Количество предметов</label><input id="enStock" type="number" min="1" step="1" value="100"></div>
-    <div><label>Режим при неудаче</label>
+    <div><label>Количество предметов<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Сколько исходных предметов участвует в расчёте партии.</span></span></label><input id="enStock" type="number" min="1" step="1" value="100"></div>
+    <div><label>Режим при неудаче<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Определяет, что происходит после неудачной попытки: предмет ломается или остаётся на текущем уровне.</span></span></label>
       <select id="enBreakMode" style="width:100%;padding:10px;border-radius:10px;border:1px solid #33415f;background:#0e1527;color:#fff;font-size:16px">
         <option value="break">💥 Предмет ломается</option>
         <option value="keep">🛡️ Предмет не ломается</option>
@@ -104,17 +110,17 @@ th{color:#9ca3af;font-weight:500}
 <div class="card">
   <h3 style="margin:2px 0 8px">🎯 Вероятность получить результат</h3>
   <div class="grid">
-    <div><label>Количество исходных предметов</label><input id="probStock" type="number" min="1" step="1" value="100"></div>
-    <div><label>Нужно получить предметов +цели</label><input id="probNeed" type="number" min="1" step="1" value="1"></div>
+    <div><label>Количество исходных предметов<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Количество предметов, которые вы готовы использовать как исходные. Расчёт показывает вероятность получить нужный результат из этой партии.</span></span></label><input id="probStock" type="number" min="1" step="1" value="100"></div>
+    <div><label>Нужно получить предметов +цели<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Минимальное количество предметов, которое вы хотите получить на выбранном целевом уровне.</span></span></label><input id="probNeed" type="number" min="1" step="1" value="1"></div>
   </div>
   <div class="small">Рассчитывает вероятность получить <b>не меньше</b> указанного количества предметов на выбранном целевом уровне.</div>
   <button type="button" class="calc" id="probCalc">Рассчитать вероятность</button>
   <div id="probCard" class="hidden" style="margin-top:12px">
     <div class="stats">
-      <div class="stat">Вероятность получить хотя бы нужное количество<b id="probAtLeast">—</b></div>
-      <div class="stat">Вероятность получить хотя бы 1<b id="probAtLeast1">—</b></div>
-      <div class="stat">Среднее количество результата<b id="probExpected">—</b></div>
-      <div class="stat">Шанс 0 результатов<b id="probZero">—</b></div>
+      <div class="stat">Вероятность получить хотя бы нужное количество<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Вероятность получить не меньше указанного количества предметов +цели из заданного числа исходных предметов.</span></span><b id="probAtLeast">—</b></div>
+      <div class="stat">Вероятность получить хотя бы 1<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Вероятность, что из всей партии получится хотя бы один предмет на целевом уровне.</span></span><b id="probAtLeast1">—</b></div>
+      <div class="stat">Среднее количество результата<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Математическое ожидание: сколько предметов +цели получится в среднем из указанной партии.</span></span><b id="probExpected">—</b></div>
+      <div class="stat">Шанс 0 результатов<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Вероятность, что из указанного количества исходных предметов не получится ни одного предмета +цели.</span></span><b id="probZero">—</b></div>
     </div>
     <div class="small" id="probNote" style="margin-top:10px"></div>
   </div>
@@ -128,32 +134,32 @@ th{color:#9ca3af;font-weight:500}
 <section id="synthesis" class="hidden">
 <div class="card">
 <div class="grid">
-<div><label>Стартовый уровень (сброс)</label><input id="start" type="number" min="0" max="19" value="0"></div>
-<div><label>Целевой уровень</label><input id="target" type="number" min="1" max="30" value="6"></div>
+<div><label>Стартовый уровень (сброс)<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Уровень, с которого начинается расчёт. При сбросе неудача возвращает предмет на этот уровень.</span></span></label><input id="start" type="number" min="0" max="19" value="0"></div>
+<div><label>Целевой уровень<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Уровень, которого нужно достичь. Например, +6 означает последовательное прохождение от стартового уровня до +6.</span></span></label><input id="target" type="number" min="1" max="30" value="6"></div>
 </div>
-<label class="switch"><input id="keep" type="checkbox"> <span>При неудаче сохранить текущий уровень</span></label>
-<label class="switch"><input id="breakMode" type="checkbox"> <span>💥 При неудаче предмет ломается</span></label>
+<label class="switch"><input id="keep" type="checkbox"> <span>При неудаче сохранить текущий уровень <span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Неудача не сбрасывает уровень: предмет остаётся на текущем уровне и продолжает попытки.</span></span></span></label>
+<label class="switch"><input id="breakMode" type="checkbox"> <span>💥 При неудаче предмет ломается <span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Каждая неудача уничтожает предмет. Для партии рассчитывается вероятность прохождения всей цепочки.</span></span></span></label>
 <div id="breakFields" class="hidden" style="margin-top:10px">
   <div class="grid">
-    <div><label>Количество исходных предметов</label><input id="stock" type="number" min="0" step="1" value="10000"></div>
+    <div><label>Количество исходных предметов<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Количество предметов, которые вы готовы использовать как исходные. Расчёт показывает вероятность получить нужный результат из этой партии.</span></span></label><input id="stock" type="number" min="0" step="1" value="10000"></div>
     <div><label>Сколько успешных предметов нужно</label><input id="needSuccess" type="number" min="1" step="1" value="1"></div>
   </div>
 </div>
 <label style="margin-top:14px">Общие цены</label>
 <div class="grid">
-  <div><label>Цена синтеза для всех уровней</label><input id="commonFee" type="number" min="0" step="1" placeholder="Например: 60000000"></div>
-  <div><label>Цена 2-го предмета для всех уровней</label><input id="commonItem" type="number" min="0" step="1" placeholder="Например: 10000000"></div>
+  <div><label>Цена синтеза для всех уровней<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Стоимость одной попытки синтеза на каждом уровне. После нажатия кнопки эта цена применяется ко всем переходам.</span></span></label><input id="commonFee" type="number" min="0" step="1" placeholder="Например: 60000000"></div>
+  <div><label>Цена 2-го предмета для всех уровней<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Стоимость второго предмета, который расходуется на одну попытку синтеза. Применяется ко всем уровням.</span></span></label><input id="commonItem" type="number" min="0" step="1" placeholder="Например: 10000000"></div>
 </div>
 <button type="button" class="calc" id="applyPrices" style="margin-top:8px">📋 Применить цены ко всем уровням</button>
 <div style="margin-top:10px">
-  <label>Одинаковый шанс для всех уровней, %</label>
+  <label>Одинаковый шанс для всех уровней, %<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Один общий шанс синтеза. Например, 0.33 означает 0,33%. Кнопка применяет его ко всем переходам.</span></span></label>
   <div style="display:flex;gap:8px">
     <input id="commonChance" type="number" min="0" max="100" step="0.001" placeholder="Например: 0.33">
     <button type="button" class="calc" id="applyChance" style="margin-top:0;min-width:210px">🎯 Применить шанс ко всем</button>
   </div>
 </div>
 <div class="small">Можно оставить цены одинаковыми для всех уровней. Если нужны разные цены, их можно изменить прямо в таблице.</div>
-<label style="margin-top:14px">Параметры синтеза по уровням</label><div class="small">Шанс вводится непосредственно в процентах: 0.33 = 0,33%, 0.007 = 0,007%, 33 = 33%.</div>
+<label style="margin-top:14px">Параметры синтеза по уровням<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Для каждого перехода задаются шанс успеха, цена синтеза и цена второго предмета.</span></span></label><div class="small">Шанс вводится непосредственно в процентах: 0.33 = 0,33%, 0.007 = 0,007%, 33 = 33%.</div>
 <div class="level-groups" id="rows">
   <details class="level-group" open><summary>🔮 Синтез +0 → +10</summary><div class="group-body"><div class="rows" id="rows1"></div></div></details>
   <details class="level-group"><summary>🔮 Синтез +10 → +20</summary><div class="group-body"><div class="rows" id="rows2"></div></div></details>
@@ -181,12 +187,12 @@ th{color:#9ca3af;font-weight:500}
 </div></div>
 
 <div class="card"><h3>Расчёт по уровням</h3>
-<table><thead><tr><th>Переход</th><th>Шанс</th><th>Накопленный</th><th>Цена</th></tr></thead>
+<table><thead><tr><th title="Какой переход между уровнями рассчитывается">Переход</th><th title="Шанс успеха одного конкретного перехода">Шанс</th><th title="Вероятность дойти от стартового уровня до этого уровня через все предыдущие переходы">Накопленный</th><th title="Стоимость одной попытки на этом переходе">Цена</th></tr></thead>
 <tbody id="tbl"></tbody></table>
 <div class="small">Цена синтеза и цена 2-го предмета списываются при каждой попытке. Пустая цена не учитывается.</div>
 </div>
 </section>
-<section id="worthit" class="hidden"><div class="card"><h2 style="margin:2px 0 5px">💰 Стоит ли мне это делать?</h2><div class="small">Сравниваем среднюю стоимость получения из «Синтеза» с ценой продажи.</div><div class="grid" style="margin-top:14px"><div><label>Цена продажи готового предмета</label><input id="sale" type="number" min="0" step="1" placeholder="150000000"></div><div><label>Мой бюджет</label><input id="budget" type="number" min="0" step="1" placeholder="500000000"></div></div><div class="grid" style="margin-top:10px"><div><label>Доп. расходы</label><input id="extra" type="number" min="0" step="1" value="0"></div><div><label>Комиссия / налог, %</label><input id="tax" type="number" min="0" max="100" step="0.1" value="0"></div></div><button type="button" class="calc" id="worthCalc">Проверить</button></div><div id="decisionCard" class="card decision neutral"><div class="decisionIcon" id="decisionIcon">❓</div><div class="decisionTitle" id="decisionTitle">Заполни цену продажи</div><div class="decisionText" id="decisionText">Сначала рассчитай синтез.</div></div><div class="card"><div class="stats"><div class="stat">Средняя стоимость получения<b id="wCost">—</b></div><div class="stat">Цена после комиссии<b id="wNet">—</b></div><div class="stat">Ожидаемый результат<b id="wProfit">—</b></div><div class="stat">Бюджет<b id="wBudget">—</b></div></div><div class="small">🟢 Выгодно — цена продажи заметно выше средней стоимости. 🟡 На грани — разница небольшая. 🔴 Невыгодно — ниже средней стоимости.</div></div></section>
+<section id="worthit" class="hidden"><div class="card"><h2 style="margin:2px 0 5px">💰 Стоит ли мне это делать?</h2><div class="small">Сравниваем среднюю стоимость получения из «Синтеза» с ценой продажи.</div><div class="grid" style="margin-top:14px"><div><label>Цена продажи готового предмета<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Цена, по которой вы планируете продать готовый предмет.</span></span></label><input id="sale" type="number" min="0" step="1" placeholder="150000000"></div><div><label>Мой бюджет<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Сумма, которую вы готовы потратить на получение результата.</span></span></label><input id="budget" type="number" min="0" step="1" placeholder="500000000"></div></div><div class="grid" style="margin-top:10px"><div><label>Доп. расходы<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Дополнительные расходы, которые нужно вычесть из результата продажи.</span></span></label><input id="extra" type="number" min="0" step="1" value="0"></div><div><label>Комиссия / налог, %<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Процент комиссии или налога, который будет удержан с цены продажи.</span></span></label><input id="tax" type="number" min="0" max="100" step="0.1" value="0"></div></div><button type="button" class="calc" id="worthCalc">Проверить</button></div><div id="decisionCard" class="card decision neutral"><div class="decisionIcon" id="decisionIcon">❓</div><div class="decisionTitle" id="decisionTitle">Заполни цену продажи</div><div class="decisionText" id="decisionText">Сначала рассчитай синтез.</div></div><div class="card"><div class="stats"><div class="stat">Средняя стоимость получения<b id="wCost">—</b></div><div class="stat">Цена после комиссии<b id="wNet">—</b></div><div class="stat">Ожидаемый результат<b id="wProfit">—</b></div><div class="stat">Бюджет<b id="wBudget">—</b></div></div><div class="small">🟢 Выгодно — цена продажи заметно выше средней стоимости. 🟡 На грани — разница небольшая. 🔴 Невыгодно — ниже средней стоимости.</div></div></section>
 </main>
 
 <script>
@@ -231,14 +237,14 @@ for(let i=0;i<30;i++){
   const d=document.createElement('div');
   d.className='r';
   d.style.gridTemplateColumns='65px 1fr';
-  d.innerHTML='<span>+'+i+' → +'+(i+1)+'</span><input id="ep'+i+'" type="number" min="0" max="100" step="0.1" value="'+enchDefaults[i]+'">';
+  d.innerHTML='<span title="Переход между уровнями. Шанс справа — базовая вероятность успеха именно этого перехода.">+'+i+' → +'+(i+1)+'</span><input id="ep'+i+'" title="Базовый шанс успеха этого перехода в процентах. Например: 0.33 = 0,33%." type="number" min="0" max="100" step="0.1" value="'+enchDefaults[i]+'">';
   document.getElementById(i<10?'erows1':(i<20?'erows2':'erows3')).appendChild(d);
 }
 const rows=document.getElementById('rows');
 for(let i=0;i<30;i++){
   const d=document.createElement('div');
   d.className='r';
-  d.innerHTML='<span>+'+i+' → +'+(i+1)+'</span><input id="p'+i+'" type="number" min="0" max="100" step="0.1" value="'+synthDefaults[i]+'"><input id="fee'+i+'" type="number" min="0" step="1" placeholder="Цена синтеза"><input id="item'+i+'" type="number" min="0" step="1" placeholder="Цена 2-го предмета">';
+  d.innerHTML='<span title="Переход между уровнями. Накопленный шанс показывает вероятность дойти до этого уровня через все предыдущие переходы.">+'+i+' → +'+(i+1)+'</span><input id="p'+i+'" title="Шанс успеха этого перехода в процентах. Например: 0.33 = 0,33%." type="number" min="0" max="100" step="0.1" value="'+synthDefaults[i]+'"><input id="fee'+i+'" title="Стоимость одной попытки синтеза на этом переходе." type="number" min="0" step="1" placeholder="Цена синтеза"><input id="item'+i+'" title="Стоимость второго предмета, расходуемого на одну попытку." type="number" min="0" step="1" placeholder="Цена 2-го предмета">';
   document.getElementById(i<10?'rows1':(i<20?'rows2':'rows3')).appendChild(d);
 }
 
