@@ -136,14 +136,13 @@ th{color:#9ca3af;font-weight:500}
 <section id="drop" class="hidden">
 <div class="card">
   <h2 style="margin:2px 0 5px">📦 Расчёт дропа</h2>
-  <div class="small">Укажи длительность фарма. Для обычного дропа вводится среднее количество предметов в час. Для дропа с шансом — количество попыток в час и шанс выпадения.</div>
+  <div class="small">Укажи длительность фарма и сколько предметов ты фактически получаешь за 1 час. Калькулятор покажет примерное количество за день, неделю и месяц.</div>
   <div class="grid" style="margin-top:14px">
     <div><label>Часов фарма в день<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Сколько часов в сутки вы фармите. Например, 8 часов.</span></span></label><input id="dropHours" type="number" min="0" step="0.1" value="8"></div>
     <div><label>Дней в неделе<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Сколько дней в неделю вы фармите. По умолчанию 7.</span></span></label><input id="dropDaysWeek" type="number" min="0" step="0.1" value="7"></div>
   </div>
   <div class="grid" style="margin-top:10px">
     <div><label>Дней в месяце<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Для месячного расчёта. По умолчанию используется 30 дней.</span></span></label><input id="dropDaysMonth" type="number" min="0" step="0.1" value="30"></div>
-    <div><label>Попыток в час для дропа с шансом<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Сколько раз в среднем проверяется выпадение предмета за один час.</span></span></label><input id="dropAttempts" type="number" min="0" step="1" value="100"></div>
   </div>
 </div>
 
@@ -154,19 +153,13 @@ th{color:#9ca3af;font-weight:500}
   <button type="button" class="calc" id="addFixedDrop" style="margin-top:10px">＋ Добавить предмет</button>
 </div>
 
-<div class="card">
-  <h3 style="margin:2px 0 8px">🎲 Дроп с шансом</h3>
-  <div class="small">Введи шанс выпадения и количество попыток в час. Результат — математическое ожидание, то есть среднее количество предметов.</div>
-  <div id="chanceDropRows" class="dropRows"></div>
-  <button type="button" class="calc" id="addChanceDrop" style="margin-top:10px">＋ Добавить предмет</button>
-</div>
 
 <div class="card hidden" id="dropResultCard">
   <h3 style="margin:2px 0 8px">📊 Результат</h3>
   <div style="overflow:auto">
     <table><thead><tr><th>Предмет</th><th>В час</th><th>В день</th><th>В неделю</th><th>В месяц</th></tr></thead><tbody id="dropResultTbl"></tbody></table>
   </div>
-  <div class="small" style="margin-top:10px">Для дропа с шансом количество является средним математическим значением. Например, 0,1 предмета в час означает примерно 1 предмет за 10 часов, а не гарантированное выпадение каждый час.</div>
+  <div class="small" style="margin-top:10px">Расчёт основан на фактическом среднем количестве предмета за час. Например, если за час ты получаешь 2 сферы, за 8 часов получится примерно 16.</div>
 </div>
 <button type="button" class="calc" id="dropCalc">📊 Рассчитать дроп</button>
 </section>
@@ -643,44 +636,24 @@ function dropNum(id){
   const n=Number(raw);
   return Number.isFinite(n)?Math.max(0,n):0;
 }
-function dropPctValue(el){
-  const raw=String(el.value??'').trim().replace(',','.');
-  const n=Number(raw);
-  return Number.isFinite(n)?Math.max(0,Math.min(100,n))/100:0;
-}
-function makeDropRow(type){
+function makeDropRow(){
   const row=document.createElement('div');
-  row.className='dropRow'+(type==='chance'?' chance':'');
-  if(type==='fixed'){
-    row.innerHTML='<input class="dname" type="text" placeholder="Название предмета"><input class="dqty" type="number" min="0" step="0.01" placeholder="Кол-во / час"><input class="dunit" type="text" placeholder="шт."><button type="button" class="remove" title="Удалить строку">✕</button>';
-    document.getElementById('fixedDropRows').appendChild(row);
-  }else{
-    row.innerHTML='<input class="dname" type="text" placeholder="Название предмета"><input class="dqty" type="number" min="0" step="0.01" placeholder="Кол-во за выпадение"><input class="dchance" type="number" min="0" max="100" step="0.001" placeholder="Шанс, %"><input class="dtries" type="number" min="0" step="1" placeholder="Попыток / час"><button type="button" class="remove" title="Удалить строку">✕</button>';
-    document.getElementById('chanceDropRows').appendChild(row);
-  }
+  row.className='dropRow';
+  row.innerHTML='<input class="dname" type="text" placeholder="Название предмета"><input class="dqty" type="number" min="0" step="0.01" placeholder="Кол-во / час"><input class="dunit" type="text" placeholder="шт."><button type="button" class="remove" title="Удалить строку">✕</button>';
+  document.getElementById('fixedDropRows').appendChild(row);
   row.querySelector('.remove').addEventListener('click',()=>row.remove());
 }
 function dropCalc(){
   const hours=dropNum('dropHours');
   const daysWeek=dropNum('dropDaysWeek');
   const daysMonth=dropNum('dropDaysMonth');
-  const defaultTries=dropNum('dropAttempts');
   const out=[];
   document.querySelectorAll('#fixedDropRows .dropRow').forEach(row=>{
     const name=row.querySelector('.dname').value.trim()||'Без названия';
     const perHour=dropNumEl(row.querySelector('.dqty'));
+    const unit=row.querySelector('.dunit').value.trim()||'шт.';
     if(name==='Без названия' && perHour===0)return;
-    out.push({name,kind:'fixed',h:perHour});
-  });
-  document.querySelectorAll('#chanceDropRows .dropRow').forEach(row=>{
-    const name=row.querySelector('.dname').value.trim()||'Без названия';
-    const qty=dropNumEl(row.querySelector('.dqty'));
-    const chance=dropPctValue(row.querySelector('.dchance'));
-    const triesInput=row.querySelector('.dtries');
-    const tries=triesInput.value.trim()===''?defaultTries:dropNumEl(triesInput);
-    const perHour=qty*chance*tries;
-    if(name==='Без названия' && perHour===0)return;
-    out.push({name,kind:'chance',h:perHour});
+    out.push({name,unit,h:perHour});
   });
   const tbody=document.getElementById('dropResultTbl');
   tbody.innerHTML='';
@@ -690,7 +663,7 @@ function dropCalc(){
     out.forEach(x=>{
       const tr=document.createElement('tr');
       const vals=[x.h,x.h*hours,x.h*hours*daysWeek,x.h*hours*daysMonth];
-      tr.innerHTML='<td>'+escapeHtml(x.name)+'</td>'+vals.map(v=>'<td>'+fmt(v)+'</td>').join('');
+      tr.innerHTML='<td>'+escapeHtml(x.name)+'</td>'+vals.map(v=>'<td>'+fmt(v)+' '+escapeHtml(x.unit)+'</td>').join('');
       tbody.appendChild(tr);
     });
   }
@@ -704,11 +677,9 @@ function dropNumEl(el){
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 }
-document.getElementById('addFixedDrop').addEventListener('click',()=>makeDropRow('fixed'));
-document.getElementById('addChanceDrop').addEventListener('click',()=>makeDropRow('chance'));
+document.getElementById('addFixedDrop').addEventListener('click',makeDropRow);
 document.getElementById('dropCalc').addEventListener('click',dropCalc);
-makeDropRow('fixed');
-makeDropRow('chance');
+makeDropRow();
 
 
 /* Initial calculation only once. Inputs do NOT trigger expensive calculations.
