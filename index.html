@@ -46,7 +46,7 @@ th{color:#9ca3af;font-weight:500}
 .level-group summary:after{content:"＋";font-size:20px;opacity:.75}
 .level-group[open] summary:after{content:"−"}
 .level-group .group-body{padding:0 10px 10px}
-.dropRows{display:flex;flex-direction:column;gap:8px}.dropRow{display:grid;grid-template-columns:42px minmax(110px,1.7fr) minmax(90px,1fr);gap:7px;align-items:center}.dropRow input{min-width:0}.dropRow .remove{padding:8px 10px;margin:0;font-size:18px;line-height:1}.dropRow.locked{opacity:.65}.dropRow.linked-active{outline:2px solid #60a5fa;background:rgba(96,165,250,.10)}.dropResultActive{outline:2px solid #60a5fa;background:rgba(96,165,250,.10)}.dropRow.locked input{background:rgba(255,255,255,.04)}.dropHead{display:grid;grid-template-columns:42px minmax(110px,1.7fr) minmax(90px,1fr);gap:7px;margin-bottom:4px}.dropHead span{font-size:12px;opacity:.65}.dropActions{display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;white-space:nowrap}.dropActions button{padding:5px 7px;margin:0;min-width:36px;width:36px;height:34px;font-size:17px;line-height:1}.dropLockBtn{font-size:18px!important}.dropDeleteBtn{font-size:20px!important}.dropLocked{opacity:.75}.dropLocked td{font-weight:600}.dropLockBtn.is-locked{background:rgba(80,180,100,.16)}@media(max-width:650px){.dropRow{grid-template-columns:38px 1.4fr 1fr}.dropHead{grid-template-columns:38px 1.4fr 1fr}.dropRow input,.dropRow button{font-size:13px}.dropHead span{font-size:10px}.dropActions button{padding:5px 6px;width:34px;height:32px;font-size:16px}}
+.dropRows{display:flex;flex-direction:column;gap:8px}.dropRow{display:grid;grid-template-columns:42px minmax(110px,1.7fr) minmax(90px,1fr);gap:7px;align-items:center}.dropRow input{min-width:0}.dropRow .remove{padding:8px 10px;margin:0;font-size:18px;line-height:1}.dropRow.locked{opacity:.65}.dropRow.linked-active{outline:2px solid #60a5fa;background:rgba(96,165,250,.10)}.dropResultActive{outline:2px solid #60a5fa;background:rgba(96,165,250,.10)}.mergedResultActive{outline:2px solid #60a5fa;background:rgba(96,165,250,.10)}.mergeBadge{font-size:18px}.mergeCount{font-size:11px;opacity:.65}.dropRow.locked input{background:rgba(255,255,255,.04)}.dropHead{display:grid;grid-template-columns:42px minmax(110px,1.7fr) minmax(90px,1fr);gap:7px;margin-bottom:4px}.dropHead span{font-size:12px;opacity:.65}.dropActions{display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;white-space:nowrap}.dropActions button{padding:5px 7px;margin:0;min-width:36px;width:36px;height:34px;font-size:17px;line-height:1}.dropLockBtn{font-size:18px!important}.dropDeleteBtn{font-size:20px!important}.dropLocked{opacity:.75}.dropLocked td{font-weight:600}.dropLockBtn.is-locked{background:rgba(80,180,100,.16)}@media(max-width:650px){.dropRow{grid-template-columns:38px 1.4fr 1fr}.dropHead{grid-template-columns:38px 1.4fr 1fr}.dropRow input,.dropRow button{font-size:13px}.dropHead span{font-size:10px}.dropActions button{padding:5px 6px;width:34px;height:32px;font-size:16px}}
 </style></head>
 <body><main>
 <h1>⚔️ L2 Calculator</h1><div class="sub">Заточка и синтез</div>
@@ -157,12 +157,17 @@ th{color:#9ca3af;font-weight:500}
 <div class="card hidden" id="dropResultCard">
   <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
     <h3 style="margin:2px 0 8px">📊 Результат</h3>
-    <div style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" class="secondary" id="lockAllDrops" style="margin:0">🔒 Закрыть все</button><button type="button" class="secondary" id="unlockAllDrops" style="margin:0">🔓 Открыть все</button><button type="button" class="secondary" id="clearDropRows" style="margin:0">🧹 Очистить все</button></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" class="secondary" id="lockAllDrops" style="margin:0">🔒 Закрыть все</button><button type="button" class="secondary" id="unlockAllDrops" style="margin:0">🔓 Открыть все</button><button type="button" class="secondary" id="clearDropRows" style="margin:0">🧹 Очистить все</button><button type="button" class="secondary" id="mergeDropRows" style="margin:0">🔗 Объединить одинаковые</button></div>
   </div>
   <div style="overflow:auto">
     <table><thead><tr><th>Действия</th><th>Предмет</th><th>В час</th><th>В день</th><th>В неделю</th><th>В месяц</th></tr></thead><tbody id="dropResultTbl"></tbody></table>
   </div>
   <div class="small" style="margin-top:10px">🔒 Замочек сохраняет этот результат при следующем расчёте. Заблокированную строку нельзя удалить или очистить. Нажми на результат, чтобы подсветить связанную с ним строку.</div>
+</div>
+<div class="card hidden" id="mergedDropCard">
+  <h3 style="margin:2px 0 8px">🔗 Объединённый итог</h3>
+  <div class="small" style="margin-bottom:8px">Одинаковые названия собраны в одну строку. Нажми на итог — подсветятся все исходные строки, из которых он собран.</div>
+  <div style="overflow:auto"><table><thead><tr><th>Связь</th><th>Предмет</th><th>В час</th><th>В день</th><th>В неделю</th><th>В месяц</th></tr></thead><tbody id="mergedDropTbl"></tbody></table></div>
 </div>
 <button type="button" class="calc" id="dropCalc">📊 Рассчитать дроп</button>
 </section>
@@ -702,6 +707,46 @@ function renderDropResults(){
   });
   document.getElementById('dropResultCard').classList.remove('hidden');
 }
+function getDropItems(){
+  return [...lockedDropResults.values(),...readDropInputs()];
+}
+function normalizedDropName(name){
+  return String(name||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('ru');
+}
+function renderMergedDropResults(){
+  const card=document.getElementById('mergedDropCard'),tbody=document.getElementById('mergedDropTbl');
+  if(!card||!tbody)return;
+  tbody.innerHTML='';
+  const groups=new Map();
+  getDropItems().forEach(x=>{
+    const key=normalizedDropName(x.name);
+    if(!groups.has(key))groups.set(key,{name:x.name,ids:[],vals:[0,0,0,0]});
+    const g=groups.get(key); g.ids.push(x.id);
+    const vals=lockedDropResults.has(x.id)?x.vals:dropResultValues(x);
+    vals.forEach((v,i)=>g.vals[i]+=v);
+  });
+  if(!groups.size){card.classList.add('hidden');return;}
+  groups.forEach(g=>{
+    const tr=document.createElement('tr'); tr.dataset.mergedIds=g.ids.join('|');
+    tr.innerHTML='<td><div class="dropActions"><span class="mergeBadge" title="Объединённый результат">🔗</span></div></td><td><strong>'+escapeHtml(g.name)+'</strong>'+(g.ids.length>1?' <span class="mergeCount">('+g.ids.length+' строки)</span>':'')+'</td>'+g.vals.map(v=>'<td>'+fmt(v)+'</td>').join('');
+    tbody.appendChild(tr);
+  });
+  card.classList.remove('hidden');
+}
+function clearDropHighlights(){
+  document.querySelectorAll('#dropResultTbl tr.dropResultActive').forEach(x=>x.classList.remove('dropResultActive'));
+  document.querySelectorAll('#mergedDropTbl tr.mergedResultActive').forEach(x=>x.classList.remove('mergedResultActive'));
+  document.querySelectorAll('#fixedDropRows .dropRow.linked-active').forEach(x=>x.classList.remove('linked-active'));
+}
+function highlightDropSources(ids){
+  clearDropHighlights();
+  ids.forEach(id=>{
+    const source=document.querySelector('#fixedDropRows .dropRow[data-drop-id="'+CSS.escape(id)+'"]');
+    if(source)source.classList.add('linked-active');
+    const result=document.querySelector('#dropResultTbl tr[data-drop-id="'+CSS.escape(id)+'"]');
+    if(result)result.classList.add('dropResultActive');
+  });
+}
 function lockDropResult(id){
   if(lockedDropResults.has(id))return;
   const row=document.querySelector('#fixedDropRows .dropRow[data-drop-id="'+CSS.escape(id)+'"]');
@@ -712,12 +757,14 @@ function lockDropResult(id){
   lockedDropResults.set(id,{id,name,h,vals:dropResultValues({h})});
   row.classList.add('locked');
   renderDropResults();
+  renderMergedDropResults();
 }
 function unlockDropResult(id){
   lockedDropResults.delete(id);
   const row=document.querySelector('#fixedDropRows .dropRow[data-drop-id="'+CSS.escape(id)+'"]');
   if(row)row.classList.remove('locked');
   renderDropResults();
+  renderMergedDropResults();
 }
 function deleteDropResult(id){
   if(lockedDropResults.has(id))return;
@@ -731,9 +778,11 @@ function deleteDropResult(id){
     row.remove();
   }
   renderDropResults();
+  renderMergedDropResults();
 }
 function dropCalc(){
   renderDropResults();
+  renderMergedDropResults();
 }
 function dropNumEl(el){
   if(!el)return 0;
@@ -756,11 +805,13 @@ document.getElementById('lockAllDrops').addEventListener('click',()=>{
     row.classList.add('locked');
   });
   renderDropResults();
+  renderMergedDropResults();
 });
 document.getElementById('unlockAllDrops').addEventListener('click',()=>{
   lockedDropResults.clear();
   document.querySelectorAll('#fixedDropRows .dropRow').forEach(r=>r.classList.remove('locked'));
   renderDropResults();
+  renderMergedDropResults();
 });
 document.getElementById('clearDropRows').addEventListener('click',()=>{
   const rows=[...document.querySelectorAll('#fixedDropRows .dropRow')];
@@ -775,7 +826,9 @@ document.getElementById('clearDropRows').addEventListener('click',()=>{
     }
   });
   renderDropResults();
+  renderMergedDropResults();
 });
+document.getElementById('mergeDropRows').addEventListener('click',()=>{ renderDropResults(); renderMergedDropResults(); const c=document.getElementById('mergedDropCard'); if(c&&!c.classList.contains('hidden'))c.scrollIntoView({behavior:'smooth',block:'nearest'}); });
 document.getElementById('dropResultTbl').addEventListener('click',e=>{
   const tr=e.target.closest('tr[data-drop-id]');
   if(!tr)return;
@@ -788,11 +841,14 @@ document.getElementById('dropResultTbl').addEventListener('click',e=>{
     if(!e.target.closest('.dropDeleteBtn').disabled)deleteDropResult(id);
     return;
   }
-  document.querySelectorAll('#dropResultTbl tr.dropResultActive').forEach(x=>x.classList.remove('dropResultActive'));
-  document.querySelectorAll('#fixedDropRows .dropRow.linked-active').forEach(x=>x.classList.remove('linked-active'));
-  tr.classList.add('dropResultActive');
-  const source=document.querySelector('#fixedDropRows .dropRow[data-drop-id="'+CSS.escape(id)+'"]');
-  if(source)source.classList.add('linked-active');
+  highlightDropSources([id]);
+});
+document.getElementById('mergedDropTbl').addEventListener('click',e=>{
+  const tr=e.target.closest('tr[data-merged-ids]');
+  if(!tr)return;
+  document.querySelectorAll('#mergedDropTbl tr.mergedResultActive').forEach(x=>x.classList.remove('mergedResultActive'));
+  highlightDropSources(tr.dataset.mergedIds.split('|').filter(Boolean));
+  tr.classList.add('mergedResultActive');
 });
 makeDropRow();
 
