@@ -101,6 +101,24 @@ th{color:#9ca3af;font-weight:500}
   </div>
   <div class="small" id="enBatchNote">Количество рассчитывается как математическое ожидание. При режиме «ломается» каждый предмет имеет одну попытку на данный переход: неудача уничтожает предмет. При режиме «не ломается» неудача оставляет предмет на текущем уровне, поэтому каждый предмет продолжает попытки до успеха.</div>
 </div>
+<div class="card">
+  <h3 style="margin:2px 0 8px">🎯 Вероятность получить результат</h3>
+  <div class="grid">
+    <div><label>Количество исходных предметов</label><input id="probStock" type="number" min="1" step="1" value="100"></div>
+    <div><label>Нужно получить предметов +цели</label><input id="probNeed" type="number" min="1" step="1" value="1"></div>
+  </div>
+  <div class="small">Рассчитывает вероятность получить <b>не меньше</b> указанного количества предметов на выбранном целевом уровне.</div>
+  <button type="button" class="calc" id="probCalc">Рассчитать вероятность</button>
+  <div id="probCard" class="hidden" style="margin-top:12px">
+    <div class="stats">
+      <div class="stat">Вероятность получить хотя бы нужное количество<b id="probAtLeast">—</b></div>
+      <div class="stat">Вероятность получить хотя бы 1<b id="probAtLeast1">—</b></div>
+      <div class="stat">Среднее количество результата<b id="probExpected">—</b></div>
+      <div class="stat">Шанс 0 результатов<b id="probZero">—</b></div>
+    </div>
+    <div class="small" id="probNote" style="margin-top:10px"></div>
+  </div>
+</div>
 <div class="card"><div class="stats">
 <div class="stat">Среднее попыток<b id="eexpected">—</b></div>
 <div class="stat">Шанс полного прохода<b id="erun">—</b></div>
@@ -278,6 +296,54 @@ function enchantEffectiveChance(i,luc){
   const base=pct('ep'+i);
   return base + (1-base)*luc;
 }
+function binomialAtLeast(n,p,k){
+  n=Math.floor(n); k=Math.floor(k);
+  if(k<=0)return 1;
+  if(k>n)return 0;
+  if(p<=0)return 0;
+  if(p>=1)return 1;
+  // Compute lower tail P(X < k), then subtract from 1.
+  // Recurrence avoids huge factorials for normal batch sizes.
+  let q=1-p;
+  let term=Math.pow(q,n);
+  let sum=term;
+  for(let x=0;x<k-1;x++){
+    if(term===0) break;
+    term *= ((n-x)/(x+1))*(p/q);
+    sum += term;
+  }
+  return Math.max(0,Math.min(1,1-sum));
+}
+function enchantProbabilityCalc(){
+  let s=clampLevel('estart',29), t=Math.max(1,clampLevel('etarget',30));
+  if(t<=s)t=s+1;
+  const n=Math.max(1,Math.floor(val('probStock')));
+  const need=Math.max(1,Math.floor(val('probNeed')));
+  const luc=getLucChance();
+  let path=1;
+  for(let i=s;i<t;i++) path*=enchantEffectiveChance(i,luc);
+  const mode=document.getElementById('enBreakMode').value;
+  let atLeast, atLeast1, expected, zero;
+  if(mode==='keep'){
+    atLeast=need<=n?1:0;
+    atLeast1=n>0&&path>0?1:0;
+    expected=n*path;
+    zero=path>0?0:1;
+  }else{
+    expected=n*path;
+    atLeast=binomialAtLeast(n,path,need);
+    atLeast1=binomialAtLeast(n,path,1);
+    zero=Math.pow(1-path,n);
+  }
+  document.getElementById('probAtLeast').textContent=(atLeast*100).toFixed(4)+'%';
+  document.getElementById('probAtLeast1').textContent=(atLeast1*100).toFixed(4)+'%';
+  document.getElementById('probExpected').textContent=fmt(expected);
+  document.getElementById('probZero').textContent=(zero*100).toFixed(4)+'%';
+  document.getElementById('probNote').textContent=mode==='break'
+    ? 'Расчёт использует биномиальную вероятность: каждый исходный предмет независимо имеет шанс '+(path*100).toFixed(6)+'% дойти до цели.'
+    : 'В режиме «не ломается» предметы не уничтожаются при неудаче, поэтому при ненулевом шансе каждый из '+n+' предметов в итоге дойдёт до цели. Среднее число успешных результатов за один полный цикл равно '+fmt(expected)+'.';
+  document.getElementById('probCard').classList.remove('hidden');
+}
 function enchantCalc(){
   let s=clampLevel('estart',29), t=Math.max(1,clampLevel('etarget',30));
   if(t<=s)t=s+1;
@@ -287,7 +353,7 @@ function enchantCalc(){
   for(let i=s;i<t;i++) q*=enchantEffectiveChance(i,luc);
   document.getElementById('erun').textContent=(q*100).toFixed(6)+'%';
   document.getElementById('eexpected').textContent=q>0?fmt(1/q):'∞';
-  if(!document.getElementById('enBatchCard').classList.contains('hidden')) enchantBatchCalc();
+  if(!document.getElementById('enBatchCard').classList.contains('hidden')) enchantBatchCalc(); if(!document.getElementById('probCard').classList.contains('hidden')) enchantProbabilityCalc();
 }
 function enchantBatchCalc(){
   let s=clampLevel('estart',29), t=Math.max(1,clampLevel('etarget',30));
@@ -342,6 +408,10 @@ document.getElementById('luc').addEventListener('input',function(){
 });
 document.getElementById('ecalc').addEventListener('click',enchantCalc);
 document.getElementById('enBatchCalc').addEventListener('click',enchantBatchCalc);
+document.getElementById('probCalc').addEventListener('click',enchantProbabilityCalc);
+document.getElementById('probStock').addEventListener('input',function(){if(!document.getElementById('probCard').classList.contains('hidden')) enchantProbabilityCalc();});
+document.getElementById('probNeed').addEventListener('input',function(){if(!document.getElementById('probCard').classList.contains('hidden')) enchantProbabilityCalc();});
+
 document.getElementById('enStock').addEventListener('input',function(){if(!document.getElementById('enBatchCard').classList.contains('hidden')) enchantBatchCalc();});
 document.getElementById('enBreakMode').addEventListener('change',enchantBatchCalc);
 
