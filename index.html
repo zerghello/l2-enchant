@@ -46,13 +46,14 @@ th{color:#9ca3af;font-weight:500}
 .level-group summary:after{content:"＋";font-size:20px;opacity:.75}
 .level-group[open] summary:after{content:"−"}
 .level-group .group-body{padding:0 10px 10px}
+.dropRows{display:flex;flex-direction:column;gap:8px}.dropRow{display:grid;grid-template-columns:minmax(110px,1.5fr) minmax(80px,1fr) minmax(80px,1fr) 42px;gap:7px;align-items:center}.dropRow input{min-width:0}.dropRow .remove{padding:9px 10px;margin:0}.dropHead{display:grid;grid-template-columns:minmax(110px,1.5fr) minmax(80px,1fr) minmax(80px,1fr) 42px;gap:7px;margin-bottom:4px}.dropHead span{font-size:12px;opacity:.65}.dropRow.chance{grid-template-columns:minmax(110px,1.35fr) minmax(75px,1fr) minmax(75px,1fr) minmax(75px,1fr) 42px}.dropHead.chance{grid-template-columns:minmax(110px,1.35fr) minmax(75px,1fr) minmax(75px,1fr) minmax(75px,1fr) 42px}@media(max-width:650px){.dropRow{grid-template-columns:1.4fr 1fr 1fr 38px}.dropHead{grid-template-columns:1.4fr 1fr 1fr 38px}.dropRow.chance{grid-template-columns:1.3fr .8fr .9fr .9fr 38px}.dropHead.chance{grid-template-columns:1.3fr .8fr .9fr .9fr 38px}.dropRow input,.dropRow button{font-size:13px}.dropHead span{font-size:10px}}
 </style></head>
 <body><main>
 <h1>⚔️ L2 Calculator</h1><div class="sub">Заточка и синтез</div>
 
 <div class="tabs">
 <button type="button" class="tab active" id="en">⚔️ Заточка</button>
-<button type="button" class="tab" id="sy">🔮 Синтез</button><button type="button" class="tab" id="wi">💰 Стоит ли?</button>
+<button type="button" class="tab" id="sy">🔮 Синтез</button><button type="button" class="tab" id="wi">💰 Стоит ли?</button><button type="button" class="tab" id="dr">📦 Дроп</button>
 </div>
 
 <section id="enchant">
@@ -130,6 +131,44 @@ th{color:#9ca3af;font-weight:500}
 <div class="stat">Среднее попыток<b id="eexpected">—</b></div>
 <div class="stat">Шанс полного прохода<b id="erun">—</b></div>
 </div></div>
+</section>
+
+<section id="drop" class="hidden">
+<div class="card">
+  <h2 style="margin:2px 0 5px">📦 Расчёт дропа</h2>
+  <div class="small">Укажи длительность фарма. Для обычного дропа вводится среднее количество предметов в час. Для дропа с шансом — количество попыток в час и шанс выпадения.</div>
+  <div class="grid" style="margin-top:14px">
+    <div><label>Часов фарма в день<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Сколько часов в сутки вы фармите. Например, 8 часов.</span></span></label><input id="dropHours" type="number" min="0" step="0.1" value="8"></div>
+    <div><label>Дней в неделе<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Сколько дней в неделю вы фармите. По умолчанию 7.</span></span></label><input id="dropDaysWeek" type="number" min="0" step="0.1" value="7"></div>
+  </div>
+  <div class="grid" style="margin-top:10px">
+    <div><label>Дней в месяце<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Для месячного расчёта. По умолчанию используется 30 дней.</span></span></label><input id="dropDaysMonth" type="number" min="0" step="0.1" value="30"></div>
+    <div><label>Попыток в час для дропа с шансом<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Сколько раз в среднем проверяется выпадение предмета за один час.</span></span></label><input id="dropAttempts" type="number" min="0" step="1" value="100"></div>
+  </div>
+</div>
+
+<div class="card">
+  <h3 style="margin:2px 0 8px">📦 Обычный дроп</h3>
+  <div class="small">Если предмет уже известен как среднее количество за час — просто впиши это число.</div>
+  <div id="fixedDropRows" class="dropRows"></div>
+  <button type="button" class="calc" id="addFixedDrop" style="margin-top:10px">＋ Добавить предмет</button>
+</div>
+
+<div class="card">
+  <h3 style="margin:2px 0 8px">🎲 Дроп с шансом</h3>
+  <div class="small">Введи шанс выпадения и количество попыток в час. Результат — математическое ожидание, то есть среднее количество предметов.</div>
+  <div id="chanceDropRows" class="dropRows"></div>
+  <button type="button" class="calc" id="addChanceDrop" style="margin-top:10px">＋ Добавить предмет</button>
+</div>
+
+<div class="card hidden" id="dropResultCard">
+  <h3 style="margin:2px 0 8px">📊 Результат</h3>
+  <div style="overflow:auto">
+    <table><thead><tr><th>Предмет</th><th>В час</th><th>В день</th><th>В неделю</th><th>В месяц</th></tr></thead><tbody id="dropResultTbl"></tbody></table>
+  </div>
+  <div class="small" style="margin-top:10px">Для дропа с шансом количество является средним математическим значением. Например, 0,1 предмета в час означает примерно 1 предмет за 10 часов, а не гарантированное выпадение каждый час.</div>
+</div>
+<button type="button" class="calc" id="dropCalc">📊 Рассчитать дроп</button>
 </section>
 
 <section id="synthesis" class="hidden">
@@ -228,10 +267,10 @@ function clampLevel(id,max){
 }
 
 /* -------- tabs: no calculation, no alert, instant switching -------- */
-const en=document.getElementById('en'), sy=document.getElementById('sy'), wi=document.getElementById('wi');
-const enchant=document.getElementById('enchant'), synthesis=document.getElementById('synthesis'), worthit=document.getElementById('worthit');
-function activateTab(which){[en,sy,wi].forEach(x=>x.classList.remove('active'));[enchant,synthesis,worthit].forEach(x=>x.classList.add('hidden'));which.classList.add('active');if(which===en)enchant.classList.remove('hidden');if(which===sy)synthesis.classList.remove('hidden');if(which===wi)worthit.classList.remove('hidden');}
-en.addEventListener('click',()=>activateTab(en));sy.addEventListener('click',()=>activateTab(sy));wi.addEventListener('click',()=>activateTab(wi));
+const en=document.getElementById('en'), sy=document.getElementById('sy'), wi=document.getElementById('wi'), dr=document.getElementById('dr');
+const enchant=document.getElementById('enchant'), synthesis=document.getElementById('synthesis'), worthit=document.getElementById('worthit'), drop=document.getElementById('drop');
+function activateTab(which){[en,sy,wi,dr].forEach(x=>x.classList.remove('active'));[enchant,synthesis,worthit,drop].forEach(x=>x.classList.add('hidden'));which.classList.add('active');if(which===en)enchant.classList.remove('hidden');if(which===sy)synthesis.classList.remove('hidden');if(which===wi)worthit.classList.remove('hidden');if(which===dr)drop.classList.remove('hidden');}
+en.addEventListener('click',()=>activateTab(en));sy.addEventListener('click',()=>activateTab(sy));wi.addEventListener('click',()=>activateTab(wi));dr.addEventListener('click',()=>activateTab(dr));
 
 /* -------- build rows -------- */
 const erows=document.getElementById('erows');
