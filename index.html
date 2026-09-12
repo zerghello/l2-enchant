@@ -635,6 +635,82 @@ synthCalc=function(){
 document.getElementById('worthCalc').addEventListener('click',function(){const raw=document.getElementById('avgcost').textContent.replace(/[^0-9,.-]/g,'').replace(',','.').replace(/\s/g,'');const avg=Number(raw);const sale=price('sale'),extra=price('extra'),tax=Math.max(0,Math.min(100,val('tax')))/100,budget=price('budget');const dc=document.getElementById('decisionCard'),di=document.getElementById('decisionIcon'),dt=document.getElementById('decisionTitle'),dx=document.getElementById('decisionText');if(!Number.isFinite(avg)||avg<=0||sale<=0){document.getElementById('wCost').textContent='—';document.getElementById('wNet').textContent='—';document.getElementById('wProfit').textContent='—';document.getElementById('wBudget').textContent=budget?fmt(budget):'—';dc.className='card decision neutral';di.textContent='❓';dt.textContent='Сначала рассчитай синтез';dx.textContent='Во вкладке «Синтез» нажми «Рассчитать», затем укажи цену продажи.';return;}const net=sale*(1-tax)-extra,profit=net-avg;document.getElementById('wCost').textContent=fmt(avg);document.getElementById('wNet').textContent=fmt(net);document.getElementById('wProfit').textContent=(profit>=0?'+':'')+fmt(profit);document.getElementById('wBudget').textContent=budget?fmt(budget):'—';if(profit>avg*.1){dc.className='card decision good';di.textContent='🟢';dt.textContent='ВЫГОДНО';dx.textContent='Цена продажи заметно выше средней стоимости получения.'}else if(profit>=0){dc.className='card decision neutral';di.textContent='🟡';dt.textContent='НА ГРАНИ';dx.textContent='Средняя прибыль небольшая.'}else{dc.className='card decision bad';di.textContent='🔴';dt.textContent='НЕВЫГОДНО';dx.textContent='Средняя стоимость получения выше цены продажи.'}});
 
 
+/* -------- drop calculator -------- */
+function dropNum(id){
+  const e=document.getElementById(id);
+  if(!e)return 0;
+  const raw=String(e.value??'').trim().replace(',','.');
+  const n=Number(raw);
+  return Number.isFinite(n)?Math.max(0,n):0;
+}
+function dropPctValue(el){
+  const raw=String(el.value??'').trim().replace(',','.');
+  const n=Number(raw);
+  return Number.isFinite(n)?Math.max(0,Math.min(100,n))/100:0;
+}
+function makeDropRow(type){
+  const row=document.createElement('div');
+  row.className='dropRow'+(type==='chance'?' chance':'');
+  if(type==='fixed'){
+    row.innerHTML='<input class="dname" type="text" placeholder="Название предмета"><input class="dqty" type="number" min="0" step="0.01" placeholder="Кол-во / час"><input class="dunit" type="text" placeholder="шт."><button type="button" class="remove" title="Удалить строку">✕</button>';
+    document.getElementById('fixedDropRows').appendChild(row);
+  }else{
+    row.innerHTML='<input class="dname" type="text" placeholder="Название предмета"><input class="dqty" type="number" min="0" step="0.01" placeholder="Кол-во за выпадение"><input class="dchance" type="number" min="0" max="100" step="0.001" placeholder="Шанс, %"><input class="dtries" type="number" min="0" step="1" placeholder="Попыток / час"><button type="button" class="remove" title="Удалить строку">✕</button>';
+    document.getElementById('chanceDropRows').appendChild(row);
+  }
+  row.querySelector('.remove').addEventListener('click',()=>row.remove());
+}
+function dropCalc(){
+  const hours=dropNum('dropHours');
+  const daysWeek=dropNum('dropDaysWeek');
+  const daysMonth=dropNum('dropDaysMonth');
+  const defaultTries=dropNum('dropAttempts');
+  const out=[];
+  document.querySelectorAll('#fixedDropRows .dropRow').forEach(row=>{
+    const name=row.querySelector('.dname').value.trim()||'Без названия';
+    const perHour=dropNumEl(row.querySelector('.dqty'));
+    if(name==='Без названия' && perHour===0)return;
+    out.push({name,kind:'fixed',h:perHour});
+  });
+  document.querySelectorAll('#chanceDropRows .dropRow').forEach(row=>{
+    const name=row.querySelector('.dname').value.trim()||'Без названия';
+    const qty=dropNumEl(row.querySelector('.dqty'));
+    const chance=dropPctValue(row.querySelector('.dchance'));
+    const triesInput=row.querySelector('.dtries');
+    const tries=triesInput.value.trim()===''?defaultTries:dropNumEl(triesInput);
+    const perHour=qty*chance*tries;
+    if(name==='Без названия' && perHour===0)return;
+    out.push({name,kind:'chance',h:perHour});
+  });
+  const tbody=document.getElementById('dropResultTbl');
+  tbody.innerHTML='';
+  if(!out.length){
+    tbody.innerHTML='<tr><td colspan="5">Добавь хотя бы один предмет.</td></tr>';
+  }else{
+    out.forEach(x=>{
+      const tr=document.createElement('tr');
+      const vals=[x.h,x.h*hours,x.h*hours*daysWeek,x.h*hours*daysMonth];
+      tr.innerHTML='<td>'+escapeHtml(x.name)+'</td>'+vals.map(v=>'<td>'+fmt(v)+'</td>').join('');
+      tbody.appendChild(tr);
+    });
+  }
+  document.getElementById('dropResultCard').classList.remove('hidden');
+}
+function dropNumEl(el){
+  if(!el)return 0;
+  const n=Number(String(el.value??'').trim().replace(',','.'));
+  return Number.isFinite(n)?Math.max(0,n):0;
+}
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+}
+document.getElementById('addFixedDrop').addEventListener('click',()=>makeDropRow('fixed'));
+document.getElementById('addChanceDrop').addEventListener('click',()=>makeDropRow('chance'));
+document.getElementById('dropCalc').addEventListener('click',dropCalc);
+makeDropRow('fixed');
+makeDropRow('chance');
+
+
 /* Initial calculation only once. Inputs do NOT trigger expensive calculations.
    This is intentional so the Android keyboard opens immediately. */
 enchantCalc();
