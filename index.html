@@ -53,7 +53,7 @@ th{color:#9ca3af;font-weight:500}
 
 <div class="tabs">
 <button type="button" class="tab active" id="en">⚔️ Заточка</button>
-<button type="button" class="tab" id="sy">🔮 Синтез</button><button type="button" class="tab" id="wi">💰 Стоит ли?</button><button type="button" class="tab" id="dr">📦 Дроп</button><button type="button" class="tab" id="xp">📈 XP</button>
+<button type="button" class="tab" id="sy">🔮 Синтез</button><button type="button" class="tab" id="wi">💰 Стоит ли?</button><button type="button" class="tab" id="dr">📦 Дроп</button><button type="button" class="tab" id="xp">📈 Опыт</button>
 </div>
 
 <section id="enchant">
@@ -243,17 +243,18 @@ th{color:#9ca3af;font-weight:500}
   <div class="small">Lineage 2 Main — таблица порогов XP. Вводи свой текущий уровень и сколько XP уже набрано внутри этого уровня.</div>
   <div class="grid" style="margin-top:12px">
     <div><label>Текущий уровень<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Твой текущий уровень. Для текущей версии калькулятора доступен диапазон 1–130.</span></span></label><input id="xpLevel" type="number" min="1" max="130" step="1" value="120"></div>
-    <div><label>XP внутри текущего уровня<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Сколько опыта уже набрано после достижения текущего уровня. Например, если на 120 уровне уже получено 5 млрд XP, введи 5000000000.</span></span></label><input id="xpCurrent" type="number" min="0" step="1" value="0"></div>
+    <div><label>Опыт внутри текущего уровня, %<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Введи процент опыта точно так, как он показывается в игре. Например: 85.2905%.</span></span></label><input id="xpCurrent" type="text" inputmode="decimal" placeholder="85,2905" value="0"></div>
   </div>
   <div class="grid" style="margin-top:10px">
-    <div><label>Целевой уровень<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Уровень, до которого хочешь рассчитать оставшийся опыт.</span></span></label><input id="xpTarget" type="number" min="2" max="131" step="1" value="130"></div>
-    <div><label>XP за час фарма<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Необязательное поле. Если указать средний XP/час, калькулятор дополнительно покажет примерное время до цели.</span></span></label><input id="xpPerHour" type="number" min="0" step="1" placeholder="Необязательно"></div>
+    <div><label>Целевой уровень<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Выбери любой уровень, до которого хочешь рассчитать оставшийся опыт.</span></span></label><select id="xpTarget"></select></div>
+    <div><label>Опыт за сутки фарма<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Сколько опыта ты в среднем получаешь за одни сутки фарма. Например, если фармишь 8 часов и получаешь 10 млрд XP в час, укажи 80 млрд.</span></span></label><input id="xpPerDay" type="text" inputmode="decimal" placeholder="Например: 80000000000"></div>
   </div>
   <div class="stats" style="margin-top:12px">
     <div class="stat">Прогресс текущего уровня<b id="xpPercent">—</b></div>
     <div class="stat">XP до следующего уровня<b id="xpNext">—</b></div>
     <div class="stat">XP до цели<b id="xpToTarget">—</b></div>
-    <div class="stat">Время до цели<b id="xpTime">—</b></div>
+    <div class="stat">Суток до следующего уровня<b id="xpDaysNext">—</b></div>
+    <div class="stat">Суток до целевого уровня<b id="xpDaysTarget">—</b></div>
   </div>
 </div>
 <div class="card">
@@ -922,25 +923,41 @@ const xpThresholds=[
 0,69,77,85,94,104,115,128,142,158,175,194,215,239,266,296,329,365,405,450,500,556,618,687,763,848,942,1047,1163,1292,1436,1596,1773,1970,2189,2432,2702,3002,3335,3705,4117,4574,5082,5647,6274,6971,7746,8607,9563,10625,11805,13117,14574,16193,17992,19991,22212,24680,27422,30469,33854,37616,41796,46440,51600,57333,63703,70781,78645,87383,97092,107880,119867,133185,147983,164426,182695,202994,225549,250610,278455,309394,343771,381968,500803,1098507,1919260,3353394,4437309,6375194,8868853,12022428,15713361,20851387,26676908,37783951,59279112,101624337,195691668,526067115,1054667831,2429029691,4331992267,9508050474,16084689136,46775669560,109911400718,286691447961,544285231086,1198876491733,2595337847780,4690029881850,8460475543177,13889917295488,21491135748723,32784374593530,48421166840185,68436260915904,93955505862445,126379958265109,212845164672213,316603412360739,441113309586970,590525186258447,742925300463354,1173231505277200,2205966396830450,4684530136558250,10633083111905000,24909610252737100,59173275390734096
 ];
 function fmtXp(n){return Math.round(Math.max(0,n)).toLocaleString('ru-RU');}
+function parseUserNumber(v){
+  return Math.max(0, Number(String(v||'').replace(/\s/g,'').replace(',','.'))||0);
+}
+function buildXpTargets(){
+  const sel=document.getElementById('xpTarget');
+  sel.innerHTML='';
+  for(let level=1;level<=131;level++){
+    const opt=document.createElement('option');
+    opt.value=level; opt.textContent=level+' уровень';
+    sel.appendChild(opt);
+  }
+  sel.value='130';
+}
 function calculateXP(){
   const lv=Math.min(130,Math.max(1,Math.round(Number(document.getElementById('xpLevel').value)||1)));
-  const target=Math.min(131,Math.max(lv+1,Math.round(Number(document.getElementById('xpTarget').value)||130)));
-  const cur=Math.max(0,Number(String(document.getElementById('xpCurrent').value||'0').replace(',','.'))||0);
+  const targetInput=document.getElementById('xpTarget');
+  let target=Math.min(131,Math.max(1,Math.round(Number(targetInput.value)||130)));
+  const pctInput=parseUserNumber(document.getElementById('xpCurrent').value);
+  const pct=Math.min(100,pctInput);
   const levelStart=xpThresholds[lv-1];
   const next=xpThresholds[lv];
   const levelNeed=Math.max(0,next-levelStart);
-  const within=Math.min(cur,levelNeed);
-  const remainNext=Math.max(0,next-(levelStart+within));
+  const within=levelNeed*(pct/100);
+  const remainNext=Math.max(0,levelNeed-within);
   const targetTotal=xpThresholds[target-1];
-  const remainTarget=Math.max(0,targetTotal-(levelStart+within));
-  const pct=levelNeed>0?(within/levelNeed*100):100;
-  document.getElementById('xpPercent').textContent=pct.toFixed(2).replace('.',',')+'%';
+  const currentTotal=levelStart+within;
+  const remainTarget=Math.max(0,targetTotal-currentTotal);
+  document.getElementById('xpPercent').textContent=pct.toFixed(4).replace('.',',')+'%';
   document.getElementById('xpNext').textContent=fmtXp(remainNext);
-  document.getElementById('xpToTarget').textContent=fmtXp(remainTarget);
-  const ph=Math.max(0,Number(String(document.getElementById('xpPerHour').value||'0').replace(',','.'))||0);
-  document.getElementById('xpTime').textContent=ph>0?(remainTarget/ph<24?((remainTarget/ph).toFixed(1).replace('.',',')+' ч'):((remainTarget/ph/24).toFixed(1).replace('.',',')+' дн.')):'—';
+  document.getElementById('xpToTarget').textContent=target<=lv?'Цель уже достигнута':' '+fmtXp(remainTarget);
+  const perDay=parseUserNumber(document.getElementById('xpPerDay').value);
+  document.getElementById('xpDaysNext').textContent=perDay>0?(remainNext/perDay).toFixed(2).replace('.',',')+' дн.':'—';
+  document.getElementById('xpDaysTarget').textContent=perDay>0?(target<=lv?'0 дн.':(remainTarget/perDay).toFixed(2).replace('.',',')+' дн.'):'—';
   document.getElementById('xpLevel').value=lv;
-  document.getElementById('xpTarget').value=target;
+  targetInput.value=target;
 }
 function buildXpTable(){
   const body=document.getElementById('xpTableBody');
@@ -952,8 +969,11 @@ function buildXpTable(){
     body.appendChild(tr);
   }
 }
-['xpLevel','xpCurrent','xpTarget','xpPerHour'].forEach(id=>document.getElementById(id).addEventListener('input',calculateXP));
+buildXpTargets();
+['xpLevel','xpCurrent','xpPerDay'].forEach(id=>document.getElementById(id).addEventListener('input',calculateXP));
+document.getElementById('xpTarget').addEventListener('change',calculateXP);
 buildXpTable();
+calculateXP();
 
 /* Initial calculation. Further drop changes are recalculated automatically and throttled to one render per animation frame. */
 enchantCalc();
