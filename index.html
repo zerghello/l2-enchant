@@ -169,7 +169,6 @@ th{color:#9ca3af;font-weight:500}
   <div class="small" style="margin-bottom:8px">Одинаковые названия собраны в одну строку. Нажми на итог — подсветятся все исходные строки, из которых он собран.</div>
   <div style="overflow:auto"><table><thead><tr><th>Связь</th><th>Предмет</th><th>В час</th><th>В день</th><th>В неделю</th><th>В месяц</th></tr></thead><tbody id="mergedDropTbl"></tbody></table></div>
 </div>
-<button type="button" class="calc" id="dropCalc">📊 Рассчитать дроп</button>
 </section>
 
 <section id="synthesis" class="hidden">
@@ -662,8 +661,9 @@ function makeDropRow(){
     }else{
       row.remove();
     }
-    renderDropResults();
+    scheduleDropRender();
   });
+  scheduleDropRender();
 }
 function readDropInputs(){
   const out=[];
@@ -793,7 +793,21 @@ function escapeHtml(str){
   return String(str).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 }
 document.getElementById('addFixedDrop').addEventListener('click',makeDropRow);
-document.getElementById('dropCalc').addEventListener('click',dropCalc);
+// Автоматический расчёт: один render на кадр, даже если пользователь быстро вводит много символов.
+let dropRenderScheduled=false;
+function scheduleDropRender(){
+  if(dropRenderScheduled)return;
+  dropRenderScheduled=true;
+  requestAnimationFrame(()=>{
+    dropRenderScheduled=false;
+    renderDropResults();
+    renderMergedDropResults();
+  });
+}
+document.getElementById('fixedDropRows').addEventListener('input',scheduleDropRender);
+document.getElementById('dropHours').addEventListener('input',scheduleDropRender);
+document.getElementById('dropDaysWeek').addEventListener('input',scheduleDropRender);
+document.getElementById('dropDaysMonth').addEventListener('input',scheduleDropRender);
 document.getElementById('lockAllDrops').addEventListener('click',()=>{
   document.querySelectorAll('#fixedDropRows .dropRow').forEach(row=>{
     const id=row.dataset.dropId;
@@ -852,8 +866,7 @@ document.getElementById('mergedDropTbl').addEventListener('click',e=>{
 });
 makeDropRow();
 
-/* Initial calculation only once. Inputs do NOT trigger expensive calculations.
-   This is intentional so the Android keyboard opens immediately. */
+/* Initial calculation. Further drop changes are recalculated automatically and throttled to one render per animation frame. */
 enchantCalc();
 synthCalc();
 })();
