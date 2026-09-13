@@ -53,7 +53,7 @@ th{color:#9ca3af;font-weight:500}
 
 <div class="tabs">
 <button type="button" class="tab active" id="en">⚔️ Заточка</button>
-<button type="button" class="tab" id="sy">🔮 Синтез</button><button type="button" class="tab" id="wi">💰 Стоит ли?</button><button type="button" class="tab" id="dr">📦 Дроп</button>
+<button type="button" class="tab" id="sy">🔮 Синтез</button><button type="button" class="tab" id="wi">💰 Стоит ли?</button><button type="button" class="tab" id="dr">📦 Дроп</button><button type="button" class="tab" id="xp">📈 XP</button>
 </div>
 
 <section id="enchant">
@@ -236,6 +236,37 @@ th{color:#9ca3af;font-weight:500}
 <section id="worthit" class="hidden"><div class="card"><h2 style="margin:2px 0 5px">💰 Стоит ли мне это делать?</h2><div class="small">Сравниваем среднюю стоимость получения из «Синтеза» с ценой продажи.</div><div class="grid" style="margin-top:14px"><div><label>Цена продажи готового предмета<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Цена, по которой вы планируете продать готовый предмет.</span></span></label><input id="sale" type="number" min="0" step="1" placeholder="150000000"></div><div><label>Мой бюджет<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Сумма, которую вы готовы потратить на получение результата.</span></span></label><input id="budget" type="number" min="0" step="1" placeholder="500000000"></div></div><div class="grid" style="margin-top:10px"><div><label>Доп. расходы<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Дополнительные расходы, которые нужно вычесть из результата продажи.</span></span></label><input id="extra" type="number" min="0" step="1" value="0"></div><div><label>Комиссия / налог, %<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Процент комиссии или налога, который будет удержан с цены продажи.</span></span></label><input id="tax" type="number" min="0" max="100" step="0.1" value="0"></div></div><button type="button" class="calc" id="worthCalc">Проверить</button></div><div id="decisionCard" class="card decision neutral"><div class="decisionIcon" id="decisionIcon">❓</div><div class="decisionTitle" id="decisionTitle">Заполни цену продажи</div><div class="decisionText" id="decisionText">Сначала рассчитай синтез.</div></div><div class="card"><div class="stats"><div class="stat">Средняя стоимость получения<b id="wCost">—</b></div><div class="stat">Цена после комиссии<b id="wNet">—</b></div><div class="stat">Ожидаемый результат<b id="wProfit">—</b></div><div class="stat">Бюджет<b id="wBudget">—</b></div></div><div class="small">🟢 Выгодно — цена продажи заметно выше средней стоимости. 🟡 На грани — разница небольшая. 🔴 Невыгодно — ниже средней стоимости.</div></div></section>
 </main>
 
+
+<section id="xpCalc" class="hidden">
+<div class="card">
+  <h2 style="margin:2px 0 6px">📈 Опыт персонажа</h2>
+  <div class="small">Lineage 2 Main — таблица порогов XP. Вводи свой текущий уровень и сколько XP уже набрано внутри этого уровня.</div>
+  <div class="grid" style="margin-top:12px">
+    <div><label>Текущий уровень<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Твой текущий уровень. Для текущей версии калькулятора доступен диапазон 1–130.</span></span></label><input id="xpLevel" type="number" min="1" max="130" step="1" value="120"></div>
+    <div><label>XP внутри текущего уровня<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Сколько опыта уже набрано после достижения текущего уровня. Например, если на 120 уровне уже получено 5 млрд XP, введи 5000000000.</span></span></label><input id="xpCurrent" type="number" min="0" step="1" value="0"></div>
+  </div>
+  <div class="grid" style="margin-top:10px">
+    <div><label>Целевой уровень<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Уровень, до которого хочешь рассчитать оставшийся опыт.</span></span></label><input id="xpTarget" type="number" min="2" max="131" step="1" value="130"></div>
+    <div><label>XP за час фарма<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Необязательное поле. Если указать средний XP/час, калькулятор дополнительно покажет примерное время до цели.</span></span></label><input id="xpPerHour" type="number" min="0" step="1" placeholder="Необязательно"></div>
+  </div>
+  <div class="stats" style="margin-top:12px">
+    <div class="stat">Прогресс текущего уровня<b id="xpPercent">—</b></div>
+    <div class="stat">XP до следующего уровня<b id="xpNext">—</b></div>
+    <div class="stat">XP до цели<b id="xpToTarget">—</b></div>
+    <div class="stat">Время до цели<b id="xpTime">—</b></div>
+  </div>
+</div>
+<div class="card">
+  <h3 style="margin:2px 0 8px">📋 Таблица XP Main</h3>
+  <details class="level-group">
+    <summary>Показать уровни 1 → 130</summary>
+    <div class="group-body" style="overflow-x:auto">
+      <table><thead><tr><th>Уровень</th><th>Всего XP</th><th>До следующего</th></tr></thead><tbody id="xpTableBody"></tbody></table>
+    </div>
+  </details>
+  <div class="small">Пороги XP сверены с опубликованной таблицей Lineage 2 Main; официальные патчноуты 4game отдельно подтверждают изменённые значения для уровней 127–131.</div>
+</div>
+</section>
 <script>
 (function(){
 'use strict';
@@ -269,8 +300,8 @@ function clampLevel(id,max){
 /* -------- tabs: no calculation, no alert, instant switching -------- */
 const en=document.getElementById('en'), sy=document.getElementById('sy'), wi=document.getElementById('wi'), dr=document.getElementById('dr');
 const enchant=document.getElementById('enchant'), synthesis=document.getElementById('synthesis'), worthit=document.getElementById('worthit'), drop=document.getElementById('drop');
-function activateTab(which){[en,sy,wi,dr].forEach(x=>x.classList.remove('active'));[enchant,synthesis,worthit,drop].forEach(x=>x.classList.add('hidden'));which.classList.add('active');if(which===en)enchant.classList.remove('hidden');if(which===sy)synthesis.classList.remove('hidden');if(which===wi)worthit.classList.remove('hidden');if(which===dr)drop.classList.remove('hidden');}
-en.addEventListener('click',()=>activateTab(en));sy.addEventListener('click',()=>activateTab(sy));wi.addEventListener('click',()=>activateTab(wi));dr.addEventListener('click',()=>activateTab(dr));
+function activateTab(which){[en,sy,wi,dr,xp].forEach(x=>x.classList.remove('active'));[enchant,synthesis,worthit,drop,xpCalc].forEach(x=>x.classList.add('hidden'));which.classList.add('active');if(which===en)enchant.classList.remove('hidden');if(which===sy)synthesis.classList.remove('hidden');if(which===wi)worthit.classList.remove('hidden');if(which===dr)drop.classList.remove('hidden');if(which===xp)xpCalc.classList.remove('hidden');}
+en.addEventListener('click',()=>activateTab(en));sy.addEventListener('click',()=>activateTab(sy));wi.addEventListener('click',()=>activateTab(wi));dr.addEventListener('click',()=>activateTab(dr));xp.addEventListener('click',()=>activateTab(xp));
 
 /* -------- build rows -------- */
 const erows=document.getElementById('erows');
@@ -884,6 +915,45 @@ makeDropRow();
 
 // Первичный расчёт после создания первой строки.
 scheduleDropRender();
+
+
+// XP Main: cumulative XP thresholds for levels 1-130.
+const xpThresholds=[
+0,69,77,85,94,104,115,128,142,158,175,194,215,239,266,296,329,365,405,450,500,556,618,687,763,848,942,1047,1163,1292,1436,1596,1773,1970,2189,2432,2702,3002,3335,3705,4117,4574,5082,5647,6274,6971,7746,8607,9563,10625,11805,13117,14574,16193,17992,19991,22212,24680,27422,30469,33854,37616,41796,46440,51600,57333,63703,70781,78645,87383,97092,107880,119867,133185,147983,164426,182695,202994,225549,250610,278455,309394,343771,381968,500803,1098507,1919260,3353394,4437309,6375194,8868853,12022428,15713361,20851387,26676908,37783951,59279112,101624337,195691668,526067115,1054667831,2429029691,4331992267,9508050474,16084689136,46775669560,109911400718,286691447961,544285231086,1198876491733,2595337847780,4690029881850,8460475543177,13889917295488,21491135748723,32784374593530,48421166840185,68436260915904,93955505862445,126379958265109,212845164672213,316603412360739,441113309586970,590525186258447,742925300463354,1173231505277200,2205966396830450,4684530136558250,10633083111905000,24909610252737100,59173275390734096
+];
+function fmtXp(n){return Math.round(Math.max(0,n)).toLocaleString('ru-RU');}
+function xpCalc(){
+  const lv=Math.min(130,Math.max(1,Math.round(Number(document.getElementById('xpLevel').value)||1)));
+  const target=Math.min(131,Math.max(lv+1,Math.round(Number(document.getElementById('xpTarget').value)||130)));
+  const cur=Math.max(0,Number(String(document.getElementById('xpCurrent').value||'0').replace(',','.'))||0);
+  const levelStart=xpThresholds[lv-1];
+  const next=xpThresholds[lv];
+  const levelNeed=Math.max(0,next-levelStart);
+  const within=Math.min(cur,levelNeed);
+  const remainNext=Math.max(0,next-(levelStart+within));
+  const targetTotal=xpThresholds[target-1];
+  const remainTarget=Math.max(0,targetTotal-(levelStart+within));
+  const pct=levelNeed>0?(within/levelNeed*100):100;
+  document.getElementById('xpPercent').textContent=pct.toFixed(2).replace('.',',')+'%';
+  document.getElementById('xpNext').textContent=fmtXp(remainNext);
+  document.getElementById('xpToTarget').textContent=fmtXp(remainTarget);
+  const ph=Math.max(0,Number(String(document.getElementById('xpPerHour').value||'0').replace(',','.'))||0);
+  document.getElementById('xpTime').textContent=ph>0?(remainTarget/ph<24?((remainTarget/ph).toFixed(1).replace('.',',')+' ч'):((remainTarget/ph/24).toFixed(1).replace('.',',')+' дн.')):'—';
+  document.getElementById('xpLevel').value=lv;
+  document.getElementById('xpTarget').value=target;
+}
+function buildXpTable(){
+  const body=document.getElementById('xpTableBody');
+  body.innerHTML='';
+  for(let level=1;level<=130;level++){
+    const start=xpThresholds[level-1], next=xpThresholds[level];
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td>'+level+'</td><td>'+fmtXp(start)+'</td><td>'+fmtXp(Math.max(0,next-start))+'</td>';
+    body.appendChild(tr);
+  }
+}
+['xpLevel','xpCurrent','xpTarget','xpPerHour'].forEach(id=>document.getElementById(id).addEventListener('input',xpCalc));
+buildXpTable();
 
 /* Initial calculation. Further drop changes are recalculated automatically and throttled to one render per animation frame. */
 enchantCalc();
