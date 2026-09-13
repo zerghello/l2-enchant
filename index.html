@@ -84,6 +84,13 @@ th{color:#9ca3af;font-weight:500}
   <button type="button" class="calc" id="applyEnchantChance" style="margin-top:0;min-width:210px">🎯 Применить шанс ко всем</button>
 </div>
 <div class="small">Введите шанс и нажмите кнопку — он будет установлен для всех переходов +0 → +1 ... +31 → +32.</div>
+<div class="modeBox" style="margin-top:14px;padding:12px;border-radius:12px;background:#0e1527;border:1px solid #33415f">
+  <label style="margin-top:0">⚙️ Общий режим заточки<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Эта настройка относится ко всем разделам заточки во вкладке: +0→+10, +10→+20, +20→+30 и +30→+32.</span></span></label>
+  <select id="enBreakMode" style="width:100%;padding:10px;border-radius:10px;border:1px solid #33415f;background:#0e1527;color:#fff;font-size:16px">
+    <option value="break">💥 Оружие ломается</option>
+    <option value="keep">🛡️ Оружие не ломается</option>
+  </select>
+</div>
 <label style="margin-top:14px">Шанс заточки по уровням, %<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Базовый шанс для каждого отдельного перехода. Значение вводится непосредственно в процентах: 0.33 = 0,33%.</span></span></label>
 <div class="level-groups" id="erows">
   <details class="level-group" open><summary>⚔️ Заточка +0 → +10</summary><div class="group-body"><div class="rows" id="erows1"></div></div></details>
@@ -97,12 +104,6 @@ th{color:#9ca3af;font-weight:500}
   <h3 style="margin:2px 0 8px">🧪 Расчёт партии предметов</h3>
   <div class="grid">
     <div><label>Количество предметов<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Сколько исходных предметов участвует в расчёте партии.</span></span></label><input id="enStock" class="countInput" type="text" inputmode="numeric" min="1" step="1" value="100"></div>
-    <div><label>Режим при неудаче<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Определяет, что происходит после неудачной попытки: предмет ломается или остаётся на текущем уровне.</span></span></label>
-      <select id="enBreakMode" style="width:100%;padding:10px;border-radius:10px;border:1px solid #33415f;background:#0e1527;color:#fff;font-size:16px">
-        <option value="break">💥 Предмет ломается</option>
-        <option value="keep">🛡️ Предмет не ломается</option>
-      </select>
-    </div>
   </div>
   <button type="button" class="calc" id="enBatchCalc">Рассчитать партию</button>
 </div>
