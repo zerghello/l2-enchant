@@ -157,7 +157,7 @@ th{color:#9ca3af;font-weight:500}
 <div class="card hidden" id="dropResultCard">
   <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
     <h3 style="margin:2px 0 8px">📊 Результат</h3>
-    <div style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" class="secondary" id="lockAllDrops" style="margin:0">🔒 Закрыть все</button><button type="button" class="secondary" id="unlockAllDrops" style="margin:0">🔓 Открыть все</button><button type="button" class="secondary" id="clearDropRows" style="margin:0">🧹 Очистить все</button><button type="button" class="secondary" id="mergeDropRows" style="margin:0">🔗 Объединить одинаковые</button></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" class="secondary" id="lockAllDrops" style="margin:0">🔒 Закрыть все</button><button type="button" class="secondary" id="unlockAllDrops" style="margin:0">🔓 Открыть все</button><button type="button" class="secondary" id="clearDropRows" style="margin:0">🧹 Очистить все</button><button type="button" class="secondary" id="mergeDropRows" style="margin:0">🔗 Объединить по названию</button></div>
   </div>
   <div style="overflow:auto">
     <table><thead><tr><th>Действия</th><th>Предмет</th><th>В час</th><th>В день</th><th>В неделю</th><th>В месяц</th></tr></thead><tbody id="dropResultTbl"></tbody></table>
@@ -166,7 +166,7 @@ th{color:#9ca3af;font-weight:500}
 </div>
 <div class="card hidden" id="mergedDropCard">
   <h3 style="margin:2px 0 8px">🔗 Объединённый итог</h3>
-  <div class="small" style="margin-bottom:8px">Одинаковые названия собраны в одну строку. Нажми на итог — подсветятся все исходные строки, из которых он собран.</div>
+  <div class="small" style="margin-bottom:8px">Строки с одинаковым первым словом собраны в одну строку. Например: «Адена пант» + «Адена тои» → «Адена». Нажми на итог — подсветятся все исходные строки, из которых он собран.</div>
   <div style="overflow:auto"><table><thead><tr><th>Связь</th><th>Предмет</th><th>В час</th><th>В день</th><th>В неделю</th><th>В месяц</th></tr></thead><tbody id="mergedDropTbl"></tbody></table></div>
 </div>
 </section>
@@ -711,7 +711,15 @@ function getDropItems(){
   return [...lockedDropResults.values(),...readDropInputs()];
 }
 function normalizedDropName(name){
-  return String(name||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('ru');
+  // Для дропа пользователь обычно пишет коротко: «Адена пант», «Адена тои».
+  // Первое слово считаем названием предмета, остальное — уточнением/локацией.
+  const clean=String(name||'').trim().replace(/\s+/g,' ');
+  const first=clean.split(' ')[0]||'';
+  return first.toLocaleLowerCase('ru');
+}
+function mergedDropDisplayName(name){
+  const clean=String(name||'').trim().replace(/\s+/g,' ');
+  return clean.split(' ')[0]||'Без названия';
 }
 function renderMergedDropResults(){
   const card=document.getElementById('mergedDropCard'),tbody=document.getElementById('mergedDropTbl');
@@ -720,7 +728,7 @@ function renderMergedDropResults(){
   const groups=new Map();
   getDropItems().forEach(x=>{
     const key=normalizedDropName(x.name);
-    if(!groups.has(key))groups.set(key,{name:x.name,ids:[],vals:[0,0,0,0]});
+    if(!groups.has(key))groups.set(key,{name:mergedDropDisplayName(x.name),ids:[],vals:[0,0,0,0]});
     const g=groups.get(key); g.ids.push(x.id);
     const vals=lockedDropResults.has(x.id)?x.vals:dropResultValues(x);
     vals.forEach((v,i)=>g.vals[i]+=v);
