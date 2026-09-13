@@ -225,9 +225,11 @@ th{color:#9ca3af;font-weight:500}
 <div class="small">При режиме «ломается» каждая попытка уничтожает исходный предмет при неудаче. Расчёт использует биномиальное распределение.</div></div>
 
 <div class="card"><div class="stats">
-<div class="stat">Среднее синтезов<b id="expected">—</b></div><b id="expected">—</b></div>
-<div class="stat">Шанс полного прохода<b id="run">—</b></div>
-<div class="stat">Средняя стоимость<b id="avgcost">—</b></div>
+<div class="stat">Среднее синтезов<b id="expected">—</b></div>
+<div class="stat">Среднее количество 2-х предметов<b id="expectedItems">—</b></div>
+<div class="stat">Стоимость синтезов<b id="synthCost">—</b></div>
+<div class="stat">Стоимость 2-х предметов<b id="itemCost">—</b></div>
+<div class="stat">Общая стоимость<b id="avgcost">—</b></div>
 <div class="stat">50% вероятность<b id="p50">—</b></div>
 <div class="stat">90% вероятность<b id="p90">—</b></div>
 <div class="stat">95% вероятность<b id="p95">—</b></div>
@@ -539,27 +541,32 @@ function synthCalc(){
      keep=false: expected attempts on transition i = 1 / product(p[i..t-1])
      keep=true: expected attempts on transition i = product(p[s..i-1]) / p[i]
   */
-  let cost=0;
+  let synthCost=0, itemCost=0;
   if(keep){
-    // Failure keeps the current level.
-    // Each transition i needs exactly 1/p[i] attempts on average.
-    // Its per-attempt cost is fee + second-item price.
+    // Failure keeps the current level: each transition i needs 1/p[i] attempts on average.
     for(let i=s;i<t;i++){
-      if(p[i]<=0){cost=Infinity;break;}
-      cost += (1/p[i])*(price('fee'+i)+price('item'+i));
+      if(p[i]<=0){synthCost=Infinity; itemCost=Infinity; break;}
+      const attempts=1/p[i];
+      synthCost += attempts*price('fee'+i);
+      itemCost += attempts*price('item'+i);
     }
   }else{
-    // Failure resets to START.
-    // A transition i is reached once per successful prefix,
-    // so expected attempts spent on that transition are 1/(p[i]*...*p[t-1]).
+    // Failure resets to START: expected attempts spent on transition i = 1/(p[i]...p[t-1]).
     let tail=1;
     for(let i=t-1;i>=s;i--){
-      if(p[i]<=0){cost=Infinity;break;}
+      if(p[i]<=0){synthCost=Infinity; itemCost=Infinity; break;}
       tail*=p[i];
-      cost += (1/tail)*(price('fee'+i)+price('item'+i));
+      const attempts=1/tail;
+      synthCost += attempts*price('fee'+i);
+      itemCost += attempts*price('item'+i);
     }
   }
-  document.getElementById('avgcost').textContent=fmt(cost);
+  const totalCost=synthCost+itemCost;
+  const expectedItems=(Number.isFinite(expected))?expected:Infinity;
+  document.getElementById('expectedItems').textContent=fmt(expectedItems);
+  document.getElementById('synthCost').textContent=fmt(synthCost);
+  document.getElementById('itemCost').textContent=fmt(itemCost);
+  document.getElementById('avgcost').textContent=fmt(totalCost);
 
   /* Fast probability thresholds.
      For reset-to-start, exact closed form.
@@ -661,9 +668,15 @@ function breakCalc(){
 
   // In break mode, "average syntheses" means number of source-item attempts available.
   document.getElementById('expected').textContent=fmt(n);
+  document.getElementById('expectedItems').textContent=fmt(n);
   document.getElementById('run').textContent=(q*100).toFixed(8)+'%';
-  const oneAttemptCost=price('fee'+s)+price('item'+s);
-  document.getElementById('avgcost').textContent=fmt(n*oneAttemptCost);
+  // In break mode every source item starts a full synthesis chain.
+  // Keep the split visible even here: costs are based on the first transition price.
+  const synthCost=n*price('fee'+s);
+  const itemCost=n*price('item'+s);
+  document.getElementById('synthCost').textContent=fmt(synthCost);
+  document.getElementById('itemCost').textContent=fmt(itemCost);
+  document.getElementById('avgcost').textContent=fmt(synthCost+itemCost);
 
   ['p50','p90','p95','p99'].forEach(id=>document.getElementById(id).textContent='—');
   let h='',c=1;
@@ -685,7 +698,7 @@ synthCalc=function(){
   if(e)e.addEventListener('change',()=>{if(breakModeEl.checked)breakCalc();});
 });
 
-document.getElementById('worthCalc').addEventListener('click',function(){const raw=document.getElementById('avgcost').textContent.replace(/[^0-9,.-]/g,'').replace(',','.').replace(/\s/g,'');const avg=Number(raw);const sale=price('sale'),extra=price('extra'),tax=Math.max(0,Math.min(100,val('tax')))/100,budget=price('budget');const dc=document.getElementById('decisionCard'),di=document.getElementById('decisionIcon'),dt=document.getElementById('decisionTitle'),dx=document.getElementById('decisionText');if(!Number.isFinite(avg)||avg<=0||sale<=0){document.getElementById('wCost').textContent='—';document.getElementById('wNet').textContent='—';document.getElementById('wProfit').textContent='—';document.getElementById('wBudget').textContent=budget?fmt(budget):'—';dc.className='card decision neutral';di.textContent='❓';dt.textContent='Сначала рассчитай синтез';dx.textContent='Во вкладке «Синтез» нажми «Рассчитать», затем укажи цену продажи.';return;}const net=sale*(1-tax)-extra,profit=net-avg;document.getElementById('wCost').textContent=fmt(avg);document.getElementById('wNet').textContent=fmt(net);document.getElementById('wProfit').textContent=(profit>=0?'+':'')+fmt(profit);document.getElementById('wBudget').textContent=budget?fmt(budget):'—';if(profit>avg*.1){dc.className='card decision good';di.textContent='🟢';dt.textContent='ВЫГОДНО';dx.textContent='Цена продажи заметно выше средней стоимости получения.'}else if(profit>=0){dc.className='card decision neutral';di.textContent='🟡';dt.textContent='НА ГРАНИ';dx.textContent='Средняя прибыль небольшая.'}else{dc.className='card decision bad';di.textContent='🔴';dt.textContent='НЕВЫГОДНО';dx.textContent='Средняя стоимость получения выше цены продажи.'}});
+document.getElementById('worthCalc').addEventListener('click',function(){const avgText=document.getElementById('avgcost').textContent;const avg=Number(avgText.replace(/\s/g,'').replace(/,/g,''));const sale=price('sale'),extra=price('extra'),tax=Math.max(0,Math.min(100,val('tax')))/100,budget=price('budget');const dc=document.getElementById('decisionCard'),di=document.getElementById('decisionIcon'),dt=document.getElementById('decisionTitle'),dx=document.getElementById('decisionText');if(!Number.isFinite(avg)||avg<=0||sale<=0){document.getElementById('wCost').textContent='—';document.getElementById('wNet').textContent='—';document.getElementById('wProfit').textContent='—';document.getElementById('wBudget').textContent=budget?fmt(budget):'—';dc.className='card decision neutral';di.textContent='❓';dt.textContent='Сначала рассчитай синтез';dx.textContent='Во вкладке «Синтез» нажми «Рассчитать», затем укажи цену продажи.';return;}const net=sale*(1-tax)-extra,profit=net-avg;document.getElementById('wCost').textContent=fmt(avg);document.getElementById('wNet').textContent=fmt(net);document.getElementById('wProfit').textContent=(profit>=0?'+':'')+fmt(profit);document.getElementById('wBudget').textContent=budget?fmt(budget):'—';if(profit>avg*.1){dc.className='card decision good';di.textContent='🟢';dt.textContent='ВЫГОДНО';dx.textContent='Цена продажи заметно выше средней стоимости получения.'}else if(profit>=0){dc.className='card decision neutral';di.textContent='🟡';dt.textContent='НА ГРАНИ';dx.textContent='Средняя прибыль небольшая.'}else{dc.className='card decision bad';di.textContent='🔴';dt.textContent='НЕВЫГОДНО';dx.textContent='Средняя стоимость получения выше цены продажи.'}});
 
 
 /* -------- drop calculator -------- */
