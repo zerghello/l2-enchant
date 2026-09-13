@@ -298,10 +298,10 @@ function clampLevel(id,max){
 }
 
 /* -------- tabs: no calculation, no alert, instant switching -------- */
-const en=document.getElementById('en'), sy=document.getElementById('sy'), wi=document.getElementById('wi'), dr=document.getElementById('dr');
+const en=document.getElementById('en'), sy=document.getElementById('sy'), wi=document.getElementById('wi'), dr=document.getElementById('dr'), xpTab=document.getElementById('xp');
 const enchant=document.getElementById('enchant'), synthesis=document.getElementById('synthesis'), worthit=document.getElementById('worthit'), drop=document.getElementById('drop');
-function activateTab(which){[en,sy,wi,dr,xp].forEach(x=>x.classList.remove('active'));[enchant,synthesis,worthit,drop,xpCalc].forEach(x=>x.classList.add('hidden'));which.classList.add('active');if(which===en)enchant.classList.remove('hidden');if(which===sy)synthesis.classList.remove('hidden');if(which===wi)worthit.classList.remove('hidden');if(which===dr)drop.classList.remove('hidden');if(which===xp)xpCalc.classList.remove('hidden');}
-en.addEventListener('click',()=>activateTab(en));sy.addEventListener('click',()=>activateTab(sy));wi.addEventListener('click',()=>activateTab(wi));dr.addEventListener('click',()=>activateTab(dr));xp.addEventListener('click',()=>activateTab(xp));
+function activateTab(which){[en,sy,wi,dr,xpTab].forEach(x=>x.classList.remove('active'));[enchant,synthesis,worthit,drop,document.getElementById('xpCalc')].forEach(x=>x.classList.add('hidden'));which.classList.add('active');if(which===en)enchant.classList.remove('hidden');if(which===sy)synthesis.classList.remove('hidden');if(which===wi)worthit.classList.remove('hidden');if(which===dr)drop.classList.remove('hidden');if(which===xpTab)document.getElementById('xpCalc').classList.remove('hidden');}
+en.addEventListener('click',()=>activateTab(en));sy.addEventListener('click',()=>activateTab(sy));wi.addEventListener('click',()=>activateTab(wi));dr.addEventListener('click',()=>activateTab(dr));xpTab.addEventListener('click',()=>activateTab(xpTab));
 
 /* -------- build rows -------- */
 const erows=document.getElementById('erows');
@@ -922,7 +922,7 @@ const xpThresholds=[
 0,69,77,85,94,104,115,128,142,158,175,194,215,239,266,296,329,365,405,450,500,556,618,687,763,848,942,1047,1163,1292,1436,1596,1773,1970,2189,2432,2702,3002,3335,3705,4117,4574,5082,5647,6274,6971,7746,8607,9563,10625,11805,13117,14574,16193,17992,19991,22212,24680,27422,30469,33854,37616,41796,46440,51600,57333,63703,70781,78645,87383,97092,107880,119867,133185,147983,164426,182695,202994,225549,250610,278455,309394,343771,381968,500803,1098507,1919260,3353394,4437309,6375194,8868853,12022428,15713361,20851387,26676908,37783951,59279112,101624337,195691668,526067115,1054667831,2429029691,4331992267,9508050474,16084689136,46775669560,109911400718,286691447961,544285231086,1198876491733,2595337847780,4690029881850,8460475543177,13889917295488,21491135748723,32784374593530,48421166840185,68436260915904,93955505862445,126379958265109,212845164672213,316603412360739,441113309586970,590525186258447,742925300463354,1173231505277200,2205966396830450,4684530136558250,10633083111905000,24909610252737100,59173275390734096
 ];
 function fmtXp(n){return Math.round(Math.max(0,n)).toLocaleString('ru-RU');}
-function xpCalc(){
+function calculateXP(){
   const lv=Math.min(130,Math.max(1,Math.round(Number(document.getElementById('xpLevel').value)||1)));
   const target=Math.min(131,Math.max(lv+1,Math.round(Number(document.getElementById('xpTarget').value)||130)));
   const cur=Math.max(0,Number(String(document.getElementById('xpCurrent').value||'0').replace(',','.'))||0);
@@ -952,7 +952,7 @@ function buildXpTable(){
     body.appendChild(tr);
   }
 }
-['xpLevel','xpCurrent','xpTarget','xpPerHour'].forEach(id=>document.getElementById(id).addEventListener('input',xpCalc));
+['xpLevel','xpCurrent','xpTarget','xpPerHour'].forEach(id=>document.getElementById(id).addEventListener('input',calculateXP));
 buildXpTable();
 
 /* Initial calculation. Further drop changes are recalculated automatically and throttled to one render per animation frame. */
