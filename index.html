@@ -253,19 +253,31 @@ th{color:#9ca3af;font-weight:500}
 </div>
 
 <div id="batchModePanel" class="hidden">
+<!-- Сначала вводим параметры партии и шансы, затем ниже получаем ожидаемый результат. -->
 <div class="card">
 <h3 style="margin:2px 0 8px">📦 Расчёт партии</h3>
 <div class="small">Укажи, сколько предметов у тебя есть. При неудаче оба предмета сгорают, при успехе из двух получается один предмет следующего уровня.</div>
 <div class="grid" style="margin-top:12px">
   <div><label>Исходных предметов<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">От 1 до 1 000 000 предметов начального уровня.</span></span></label><input id="batchStock" class="countInput" type="text" inputmode="numeric" value="100" placeholder="100"></div>
-  <div><label>Стартовый уровень</label><input id="batchStartLevel" type="number" min="0" max="30" value="0"></div>
-  <div><label>До уровня</label><input id="batchTargetLevel" type="number" min="1" max="31" value="8"></div>
-  <div><label>Шанс синтеза, %<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Одинаковый шанс для каждого перехода. Например 0.33 = 0,33%.</span></span></label><input id="batchChance" type="number" min="0" max="100" step="0.001" value="0.33"></div>
+  <div><label>Стартовый уровень</label><input id="batchStartLevel" type="number" min="0" max="9" value="0"></div>
+  <div><label>До уровня</label><input id="batchTargetLevel" type="number" min="1" max="10" value="8"></div>
   <div><label>Цена одного синтеза</label><input id="batchSynthPrice" class="moneyInput" type="text" inputmode="numeric" value="60000000"></div>
   <div><label>Цена 2-го предмета</label><input id="batchItemPrice" class="moneyInput" type="text" inputmode="numeric" value="10000000"></div>
 </div>
-<button type="button" class="calc" id="batchSynthCalc" style="margin-top:10px">📊 Рассчитать партию</button>
+
+<div style="margin-top:14px">
+  <label>Шанс синтеза по уровням, %<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Отдельный шанс для каждого перехода. Например 0.33 = 0,33%.</span></span></label>
+  <div class="small">Каждый уровень имеет свой шанс. Можно заполнить их вручную или указать один шанс и применить его ко всем.</div>
+  <div style="display:flex;gap:8px;margin:8px 0;align-items:center;flex-wrap:wrap">
+    <input id="batchCommonChance" type="number" min="0" max="100" step="0.001" value="0.33" placeholder="0.33" style="max-width:180px">
+    <button type="button" class="secondary" id="applyBatchChanceAll" style="margin:0">🎯 Применить шанс для всех</button>
+  </div>
+  <div class="rows" id="batchChanceRows"></div>
 </div>
+
+<button type="button" class="calc" id="batchSynthCalc" style="margin-top:12px">📊 Рассчитать партию</button>
+</div>
+
 <div id="batchSynthResult" class="hidden">
 <div class="card">
 <h3 style="margin:2px 0 8px">📊 Ожидаемый результат</h3>
@@ -659,23 +671,40 @@ function retainedNeeded(s,t,p,target){
 
 document.getElementById('calc').addEventListener('click',synthCalc);
 /* -------- batch synthesis: breaking items -------- */
+function initBatchChanceRows(){
+  const wrap=document.getElementById('batchChanceRows');
+  if(!wrap)return;
+  wrap.innerHTML='';
+  for(let i=0;i<10;i++){
+    const row=document.createElement('div');
+    row.className='row';
+    row.innerHTML='<label style="min-width:130px">+'+i+' → +'+(i+1)+'</label><input class="batchChanceInput" data-level="'+i+'" type="number" min="0" max="100" step="0.001" value="0.33" placeholder="0.33">';
+    wrap.appendChild(row);
+  }
+}
+function getBatchChance(level){
+  const el=document.querySelector('.batchChanceInput[data-level="'+level+'"]');
+  if(!el)return 0;
+  const n=Number(String(el.value||'').replace(',','.'));
+  return Number.isFinite(n)?Math.max(0,Math.min(100,n))/100:0;
+}
 function batchSynthCalc(){
   const stock=Math.max(1,Math.min(1000000,Math.floor(val('batchStock'))));
-  let s=Math.max(0,Math.min(30,Math.floor(Number(document.getElementById('batchStartLevel').value)||0)));
-  let t=Math.max(1,Math.min(31,Math.floor(Number(document.getElementById('batchTargetLevel').value)||1)));
-  if(t<=s)t=Math.min(31,s+1);
-  const prob=Math.max(0,Math.min(100,Number(String(document.getElementById('batchChance').value||'').replace(',','.'))||0))/100;
+  let s=Math.max(0,Math.min(9,Math.floor(Number(document.getElementById('batchStartLevel').value)||0)));
+  let t=Math.max(1,Math.min(10,Math.floor(Number(document.getElementById('batchTargetLevel').value)||1)));
+  if(t<=s)t=Math.min(10,s+1);
   const synthPrice=price('batchSynthPrice');
   const itemPrice=price('batchItemPrice');
   let current=stock,totalAttempts=0,totalItems=0,totalSynthCost=0,totalItemCost=0,html='';
   for(let i=s;i<t;i++){
     const attempts=Math.floor(current/2);
     if(attempts<=0)break;
+    const prob=getBatchChance(i);
     const success=attempts*prob;
     const synthCost=attempts*synthPrice;
     const itemCost=attempts*itemPrice;
     totalAttempts+=attempts; totalItems+=attempts; totalSynthCost+=synthCost; totalItemCost+=itemCost;
-    html+='<tr><td>+'+i+' → +'+(i+1)+'</td><td>'+fmt(success)+'</td><td>'+fmt(attempts)+'</td><td>'+fmt(attempts)+'</td></tr>';
+    html+='<tr><td>+'+i+' → +'+(i+1)+'</td><td>'+fmt(prob*100)+'%</td><td>'+fmt(success)+'</td><td>'+fmt(attempts)+'</td></tr>';
     current=success;
   }
   document.getElementById('batchStart').textContent=fmt(stock);
@@ -688,6 +717,13 @@ function batchSynthCalc(){
   document.getElementById('batchSynthResult').classList.remove('hidden');
 }
 
+initBatchChanceRows();
+document.getElementById('applyBatchChanceAll').addEventListener('click',()=>{
+  const raw=String(document.getElementById('batchCommonChance').value||'').replace(',','.');
+  const n=Number(raw);
+  if(!Number.isFinite(n))return;
+  document.querySelectorAll('.batchChanceInput').forEach(el=>el.value=n);
+});
 document.getElementById('batchSynthCalc').addEventListener('click',batchSynthCalc);
 
 const synthModeBtn=document.getElementById('synthModeBtn'), batchModeBtn=document.getElementById('batchModeBtn');
