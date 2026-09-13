@@ -365,8 +365,11 @@ document.getElementById('applyPrices').addEventListener('click',function(){
   const feeRaw=String(document.getElementById('commonFee').value||'').trim();
   const itemRaw=String(document.getElementById('commonItem').value||'').trim();
   for(let i=0;i<31;i++){
-    document.getElementById('fee'+i).value=feeRaw;
-    document.getElementById('item'+i).value=itemRaw;
+    const feeEl=document.getElementById('fee'+i), itemEl=document.getElementById('item'+i);
+    feeEl.value=feeRaw;
+    itemEl.value=itemRaw;
+    formatGroupedInput(feeEl);
+    formatGroupedInput(itemEl);
   }
   if(document.getElementById('breakMode').checked) breakCalc();
   else synthCalc();
@@ -568,6 +571,8 @@ function synthCalc(){
     }
   }
   const totalCost=synthCost+itemCost;
+  // Render the core statistics immediately. These values must never remain '—'
+  // when the average synthesis count is available.
   const expectedItems=(Number.isFinite(expected))?expected:Infinity;
   document.getElementById('expectedItems').textContent=fmt(expectedItems);
   document.getElementById('synthCost').textContent=fmt(synthCost);
@@ -581,11 +586,13 @@ function synthCalc(){
   const thresholds=[['p50',0.5],['p90',0.9],['p95',0.95],['p99',0.99]];
   for(const [id,x] of thresholds){
     let n;
-    if(!keep){
-      n=q>0?Math.ceil(Math.log1p(-x)/Math.log1p(-q)):Infinity;
-    }else{
-      n=retainedNeeded(s,t,p,x);
-    }
+    try{
+      if(!keep){
+        n=q>0?Math.ceil(Math.log1p(-x)/Math.log1p(-q)):Infinity;
+      }else{
+        n=retainedNeeded(s,t,p,x);
+      }
+    }catch(e){ n=Infinity; }
     document.getElementById(id).textContent=Number.isFinite(n)?fmt(n):'∞';
   }
 
