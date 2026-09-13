@@ -216,6 +216,27 @@ th{color:#9ca3af;font-weight:500}
 <button type="button" class="calc" id="calc">Рассчитать</button>
 </div>
 
+<div class="card" id="batchSynthCard">
+<h3 style="margin:2px 0 8px">📦 Синтез партии предметов</h3>
+<div class="small">Модель для режима, где при неудаче оба предмета сгорают. Укажи количество исходных предметов от 1 до 1 000 000 — калькулятор покажет ожидаемое количество предметов на каждом следующем уровне и расходы.</div>
+<div class="grid" style="margin-top:12px">
+  <div><label>Исходных предметов<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Количество предметов начального уровня, которые есть у вас. Максимум — 1 000 000.</span></span></label><input id="batchStock" class="countInput" type="text" inputmode="numeric" value="100" placeholder="100"></div>
+</div>
+<button type="button" class="calc" id="batchSynthCalc" style="margin-top:10px">📊 Рассчитать партию</button>
+<div id="batchSynthResult" class="hidden" style="margin-top:14px">
+  <table><thead><tr><th>Уровень</th><th>Ожидаемо предметов</th><th>Синтезов</th><th>2-й предмет</th><th>Адена на синтез</th><th>Адена на 2-е предметы</th></tr></thead><tbody id="batchSynthTbl"></tbody></table>
+  <div class="stats" style="margin-top:12px">
+    <div class="stat">Исходных предметов<b id="batchStart">—</b></div>
+    <div class="stat">Всего синтезов<b id="batchAttempts">—</b></div>
+    <div class="stat">Всего 2-х предметов<b id="batchItems">—</b></div>
+    <div class="stat">Стоимость синтезов<b id="batchSynthCost">—</b></div>
+    <div class="stat">Стоимость 2-х предметов<b id="batchItemCost">—</b></div>
+    <div class="stat">Общая стоимость<b id="batchTotalCost">—</b></div>
+  </div>
+  <div class="small">Это математическое ожидание партии: после каждой попытки при успехе образуется 1 предмет следующего уровня, при неудаче оба предмета исчезают. Дробные значения означают среднее по большому числу одинаковых партий.</div>
+</div>
+</div>
+
 <div id="breakStats" class="card hidden"><div class="stats">
 <div class="stat">Шанс получить хотя бы 1<b id="bAtLeast">—</b></div>
 <div class="stat">Шанс не получить ни одного<b id="bNone">—</b></div>
@@ -617,6 +638,42 @@ function retainedNeeded(s,t,p,target){
 }
 
 document.getElementById('calc').addEventListener('click',synthCalc);
+/* -------- batch synthesis: breaking items -------- */
+function batchSynthCalc(){
+  const stock=Math.max(1,Math.min(1000000,Math.floor(val('batchStock'))));
+  let s=clampLevel('start',30), t=Math.max(1,clampLevel('target',31));
+  if(t<=s)t=s+1;
+  let current=stock;
+  let totalAttempts=0,totalItems=0,totalSynthCost=0,totalItemCost=0;
+  let html='';
+  for(let i=s;i<t;i++){
+    const attempts=Math.floor(current/2);
+    const prob=pct('p'+i);
+    const success=attempts*prob;
+    const synthPrice=price('fee'+i);
+    const itemPrice=price('item'+i);
+    const synthCost=attempts*synthPrice;
+    const itemCost=attempts*itemPrice;
+    totalAttempts+=attempts;
+    totalItems+=attempts;
+    totalSynthCost+=synthCost;
+    totalItemCost+=itemCost;
+    html+='<tr><td>+'+i+' → +'+(i+1)+'</td><td>'+fmt(success)+'</td><td>'+fmt(attempts)+'</td><td>'+fmt(attempts)+'</td><td>'+fmt(synthCost)+'</td><td>'+fmt(itemCost)+'</td></tr>';
+    current=success;
+    if(current<2) break;
+  }
+  document.getElementById('batchStart').textContent=fmt(stock);
+  document.getElementById('batchAttempts').textContent=fmt(totalAttempts);
+  document.getElementById('batchItems').textContent=fmt(totalItems);
+  document.getElementById('batchSynthCost').textContent=fmt(totalSynthCost);
+  document.getElementById('batchItemCost').textContent=fmt(totalItemCost);
+  document.getElementById('batchTotalCost').textContent=fmt(totalSynthCost+totalItemCost);
+  document.getElementById('batchSynthTbl').innerHTML=html||'<tr><td colspan="6">Недостаточно предметов для одной попытки.</td></tr>';
+  document.getElementById('batchSynthResult').classList.remove('hidden');
+}
+
+document.getElementById('batchSynthCalc').addEventListener('click',batchSynthCalc);
+
 const breakModeEl=document.getElementById('breakMode');
 const breakFields=document.getElementById('breakFields');
 const breakStats=document.getElementById('breakStats');
