@@ -1144,7 +1144,7 @@ function formatGroupedInput(el){
   if(raw===''){el.value='';return;}
   const digits=raw.replace(/[^0-9]/g,'');
   if(digits===''){el.value='';return;}
-  el.value=BigInt(digits).toLocaleString('ru-RU');
+  el.value=BigInt(digits).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');
 }
 
 document.addEventListener('input',e=>{
