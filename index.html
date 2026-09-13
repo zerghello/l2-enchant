@@ -262,6 +262,7 @@ th{color:#9ca3af;font-weight:500}
   <div><label>Исходных предметов<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">От 1 до 1 000 000 предметов начального уровня.</span></span></label><input id="batchStock" class="countInput" type="text" inputmode="numeric" value="100" placeholder="100"></div>
   <div><label>Стартовый уровень</label><input id="batchStartLevel" type="number" min="0" max="9" value="0"></div>
   <div><label>До уровня</label><input id="batchTargetLevel" type="number" min="1" max="10" value="8"></div>
+  <div><label>Хочу получить предметов<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Количество предметов целевого/каждого уровня, которое вас интересует. В таблице ниже будет показана вероятность получить не меньше этого количества.</span></span></label><input id="batchWanted" class="countInput" type="text" inputmode="numeric" value="1" placeholder="1"></div>
   <div><label>Цена одного синтеза</label><input id="batchSynthPrice" class="moneyInput" type="text" inputmode="numeric" placeholder="Например: 60000000"></div>
   <div><label>Цена 2-го предмета</label><input id="batchItemPrice" class="moneyInput" type="text" inputmode="numeric" placeholder="Например: 10000000"></div>
 </div>
@@ -282,7 +283,7 @@ th{color:#9ca3af;font-weight:500}
 <div id="batchSynthResult" class="hidden">
 <div class="card">
 <h3 style="margin:2px 0 8px">📊 Ожидаемый результат</h3>
-<table><thead><tr><th>Уровень</th><th>Предметов</th><th>Синтезов</th><th>2-й предмет</th></tr></thead><tbody id="batchSynthTbl"></tbody></table>
+<table><thead><tr><th>Уровень</th><th>Ожидаемо предметов</th><th>Шанс получить ≥ указанного количества</th><th>Синтезов</th><th>2-й предмет</th></tr></thead><tbody id="batchSynthTbl"></tbody></table>
 <div class="stats" style="margin-top:12px">
 <div class="stat">Исходных предметов<b id="batchStart">—</b></div>
 <div class="stat">Всего синтезов<b id="batchAttempts">—</b></div>
@@ -693,11 +694,42 @@ function getBatchChance(level){
   const n=Number(String(el.value||'').replace(',','.'));
   return Number.isFinite(n)?Math.max(0,Math.min(100,n))/100:0;
 }
+function poissonAtLeast(lambda,k){
+  if(!Number.isFinite(lambda) || lambda<=0) return 0;
+  k=Math.max(1,Math.floor(k||1));
+  if(k===1) return 1-Math.exp(-lambda);
+  if(lambda>1e6 && k<lambda*0.25) return 1;
+  if(k>10000){
+    const z=(lambda-k+0.5)/Math.sqrt(lambda);
+    return Math.max(0,Math.min(1,0.5*(1+Math.erf(z/Math.SQRT2))));
+  }
+  // Exact Poisson lower tail for practical k; stable recurrence.
+  let term=Math.exp(-lambda), sum=term;
+  const limit=Math.min(k-1,10000);
+  for(let i=1;i<=limit;i++){
+    term*=lambda/i;
+    sum+=term;
+    if(!Number.isFinite(sum)) break;
+  }
+  if(Number.isFinite(sum)) return Math.max(0,Math.min(1,1-sum));
+  const z=(lambda-k+0.5)/Math.sqrt(Math.max(lambda,1));
+  return Math.max(0,Math.min(1,0.5*(1+Math.erf(z/Math.SQRT2))));
+}
+function fmtChance(x){
+  if(!Number.isFinite(x)) return '—';
+  if(x<=0) return '0%';
+  if(x>=1) return '100%';
+  const pct=x*100;
+  if(pct>=0.01) return fmt(pct)+'%';
+  if(pct>=0.000001) return pct.toFixed(6).replace(/0+$/,'').replace(/\.$/,'')+'%';
+  return pct.toExponential(2)+'%';
+}
 function batchSynthCalc(){
   const stock=Math.max(1,Math.min(1000000,Math.floor(val('batchStock'))));
   let s=Math.max(0,Math.min(9,Math.floor(Number(document.getElementById('batchStartLevel').value)||0)));
   let t=Math.max(1,Math.min(10,Math.floor(Number(document.getElementById('batchTargetLevel').value)||1)));
   if(t<=s)t=Math.min(10,s+1);
+  const wanted=Math.max(1,Math.min(stock,Math.floor(val('batchWanted'))||1));
   const synthPrice=price('batchSynthPrice');
   const itemPrice=price('batchItemPrice');
   let current=stock,totalAttempts=0,totalItems=0,totalSynthCost=0,totalItemCost=0,html='';
@@ -708,8 +740,9 @@ function batchSynthCalc(){
     const success=attempts*prob;
     const synthCost=attempts*synthPrice;
     const itemCost=attempts*itemPrice;
+    const chance=poissonAtLeast(success,wanted);
     totalAttempts+=attempts; totalItems+=attempts; totalSynthCost+=synthCost; totalItemCost+=itemCost;
-    html+='<tr><td>+'+i+' → +'+(i+1)+'</td><td>'+fmt(prob*100)+'%</td><td>'+fmt(success)+'</td><td>'+fmt(attempts)+'</td></tr>';
+    html+='<tr><td>+'+i+' → +'+(i+1)+'</td><td>'+fmt(success)+'</td><td>'+fmtChance(chance)+'</td><td>'+fmt(attempts)+'</td><td>'+fmt(attempts)+'</td></tr>';
     current=success;
   }
   document.getElementById('batchStart').textContent=fmt(stock);
@@ -718,7 +751,7 @@ function batchSynthCalc(){
   document.getElementById('batchSynthCost').textContent=fmt(totalSynthCost);
   document.getElementById('batchItemCost').textContent=fmt(totalItemCost);
   document.getElementById('batchTotalCost').textContent=fmt(totalSynthCost+totalItemCost);
-  document.getElementById('batchSynthTbl').innerHTML=html||'<tr><td colspan="4">Недостаточно предметов для одной попытки.</td></tr>';
+  document.getElementById('batchSynthTbl').innerHTML=html||'<tr><td colspan="5">Недостаточно предметов для одной попытки.</td></tr>';
   document.getElementById('batchSynthResult').classList.remove('hidden');
 }
 
