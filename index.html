@@ -944,22 +944,51 @@ scheduleDropRender();
 
 function formatGroupedInput(el){
   if(!el || (!el.classList.contains('moneyInput') && !el.classList.contains('countInput'))) return;
-  const raw=normalizeNumericString(el.value,true);
+  let raw=String(el.value??'').replace(/\s/g,'');
   if(raw===''){el.value='';return;}
-  const m=raw.match(/^(\d+)(?:\.(\d*)?)?$/);
+
+  // The display convention for grouped fields is always: 1,234,567.89
+  // A comma is treated as a decimal separator only when it is clearly decimal
+  // (e.g. 1,5 or 12,50). A 3-digit comma group is thousands (1,000).
+  let normalized=raw;
+  if(raw.includes('.')){
+    const parts=raw.split('.');
+    const whole=parts.shift().replace(/,/g,'');
+    normalized=whole+'.'+parts.join('').replace(/,/g,'');
+  }else if((raw.match(/,/g)||[]).length===1){
+    const m=raw.match(/^(\d+),(\d*)$/);
+    if(m && m[2].length>0 && m[2].length!==3) normalized=m[1]+'.'+m[2];
+    else normalized=raw.replace(/,/g,'');
+  }else normalized=raw.replace(/,/g,'');
+
+  const m=normalized.match(/^(\d+)(?:\.(\d*))?$/);
   if(!m)return;
   const whole=BigInt(m[1]).toLocaleString('en-US');
   el.value=m[2]!==undefined ? whole+'.'+m[2] : whole;
 }
+
 document.addEventListener('input',e=>{
   if(!e.target.matches('input.moneyInput,input.countInput')) return;
-  const raw=String(e.target.value||'');
-  // While typing, do not reinterpret a single comma/dot: this prevents 1,000
-  // from becoming 1.000 -> 1.0000... before the user finishes the number.
-  if(raw.includes(',') || raw.includes('.')) return;
-  formatGroupedInput(e.target);
+  const el=e.target;
+  const before=el.value;
+  const pos=el.selectionStart;
+  if(pos===null){formatGroupedInput(el);return;}
+
+  // Format as the user types. Recalculate the caret from the number of
+  // meaningful characters before it, so inserting commas does not jump to end.
+  const beforeDigits=(before.slice(0,pos).match(/[0-9.]/g)||[]).length;
+  formatGroupedInput(el);
+  let target=0, seen=0;
+  while(target<el.value.length && seen<beforeDigits){
+    if(/[0-9.]/.test(el.value[target])) seen++;
+    target++;
+  }
+  try{el.setSelectionRange(target,target);}catch(_){ }
 });
-document.addEventListener('blur',e=>{ if(e.target.matches('input.moneyInput,input.countInput')) formatGroupedInput(e.target); },true);
+
+document.addEventListener('blur',e=>{
+  if(e.target.matches('input.moneyInput,input.countInput')) formatGroupedInput(e.target);
+},true);
 
 // XP Main: cumulative XP thresholds for levels 1-130.
 const xpThresholds=[
