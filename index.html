@@ -315,14 +315,17 @@ function pct(id){
   if(!Number.isFinite(n))return 0;
   return Math.max(0,Math.min(100,n))/100;
 }
-function price(id){return Math.max(0,val(id))}
-function synthPriceAt(prefix,i){
-  const direct=price(prefix+i);
+function price(id){
+  const direct=Math.max(0,val(id));
   if(direct>0) return direct;
-  const commonId=prefix==='fee'?'commonFee':'commonItem';
-  return price(commonId);
+  // If a per-level price is empty, use the common price directly.
+  // This keeps synthesis calculations working even when the user fills
+  // only the two common price fields and does not press Apply.
+  if(/^fee\d+$/.test(id)) return Math.max(0,val('commonFee'));
+  if(/^item\d+$/.test(id)) return Math.max(0,val('commonItem'));
+  return direct;
 }
-function fmt(n){return Number.isFinite(n)?n.toLocaleString('en-US',{maximumFractionDigits:2}):'∞'}
+function fmt(n){return Number.isFinite(n)?n.toLocaleString('ru-RU',{maximumFractionDigits:2}):'∞'}
 function clampLevel(id,max){
   return Math.floor(Math.max(0,Math.min(max,val(id))));
 }
@@ -365,11 +368,8 @@ document.getElementById('applyPrices').addEventListener('click',function(){
   const feeRaw=String(document.getElementById('commonFee').value||'').trim();
   const itemRaw=String(document.getElementById('commonItem').value||'').trim();
   for(let i=0;i<31;i++){
-    const feeEl=document.getElementById('fee'+i), itemEl=document.getElementById('item'+i);
-    feeEl.value=feeRaw;
-    itemEl.value=itemRaw;
-    formatGroupedInput(feeEl);
-    formatGroupedInput(itemEl);
+    document.getElementById('fee'+i).value=feeRaw;
+    document.getElementById('item'+i).value=itemRaw;
   }
   if(document.getElementById('breakMode').checked) breakCalc();
   else synthCalc();
@@ -532,27 +532,28 @@ function synthCalc(){
   if(t<=s)t=s+1;
   const keep=document.getElementById('keep').checked;
   const p=[];
-  for(let i=0;i<31;i++)p.push(pct('p'+i));
+  for(let i=0;i<31;i++) p.push(pct('p'+i));
 
   let q=1;
-  for(let i=s;i<t;i++)q*=p[i];
+  for(let i=s;i<t;i++) q*=p[i];
 
   let expected=0;
   if(keep){
-    for(let i=s;i<t;i++){ if(p[i]<=0){expected=Infinity;break;} expected+=1/p[i]; }
+    for(let i=s;i<t;i++){
+      if(p[i]<=0){expected=Infinity;break;}
+      expected+=1/p[i];
+    }
   }else{
     expected=q>0?1/q:Infinity;
   }
+
   document.getElementById('expected').textContent=fmt(expected);
   document.getElementById('run').textContent=(q*100).toFixed(8)+'%';
 
-  /* Cost:
-     keep=false: expected attempts on transition i = 1 / product(p[i..t-1])
-     keep=true: expected attempts on transition i = product(p[s..i-1]) / p[i]
-  */
+  // Prices are resolved independently for every transition.
+  // If a transition field is empty, use the corresponding common price.
   let synthCost=0, itemCost=0;
   if(keep){
-    // Failure keeps the current level: each transition i needs 1/p[i] attempts on average.
     for(let i=s;i<t;i++){
       if(p[i]<=0){synthCost=Infinity; itemCost=Infinity; break;}
       const attempts=1/p[i];
@@ -560,7 +561,6 @@ function synthCalc(){
       itemCost += attempts*synthPriceAt('item',i);
     }
   }else{
-    // Failure resets to START: expected attempts spent on transition i = 1/(p[i]...p[t-1]).
     let tail=1;
     for(let i=t-1;i>=s;i--){
       if(p[i]<=0){synthCost=Infinity; itemCost=Infinity; break;}
@@ -570,28 +570,20 @@ function synthCalc(){
       itemCost += attempts*synthPriceAt('item',i);
     }
   }
+
   const totalCost=synthCost+itemCost;
-  // Render the core statistics immediately. These values must never remain '—'
-  // when the average synthesis count is available.
-  const expectedItems=(Number.isFinite(expected))?expected:Infinity;
+  const expectedItems=expected;
   document.getElementById('expectedItems').textContent=fmt(expectedItems);
   document.getElementById('synthCost').textContent=fmt(synthCost);
   document.getElementById('itemCost').textContent=fmt(itemCost);
   document.getElementById('avgcost').textContent=fmt(totalCost);
 
-  /* Fast probability thresholds.
-     For reset-to-start, exact closed form.
-     For retain-level, use DP per attempt, capped to avoid any heavy matrix work.
-  */
   const thresholds=[['p50',0.5],['p90',0.9],['p95',0.95],['p99',0.99]];
   for(const [id,x] of thresholds){
     let n;
     try{
-      if(!keep){
-        n=q>0?Math.ceil(Math.log1p(-x)/Math.log1p(-q)):Infinity;
-      }else{
-        n=retainedNeeded(s,t,p,x);
-      }
+      if(!keep) n=q>0?Math.ceil(Math.log1p(-x)/Math.log1p(-q)):Infinity;
+      else n=retainedNeeded(s,t,p,x);
     }catch(e){ n=Infinity; }
     document.getElementById(id).textContent=Number.isFinite(n)?fmt(n):'∞';
   }
@@ -599,12 +591,12 @@ function synthCalc(){
   let h='',c=1;
   for(let i=s;i<t;i++){
     c*=p[i];
-    const pr=synthPriceAt('fee',i)+synthPriceAt('item',i);
-    h+='<tr><td>+'+i+' → +'+(i+1)+'</td><td>'+(p[i]*100).toFixed(1)+'%</td><td>'+(c*100).toFixed(8)+'%</td><td>'+(pr?fmt(pr):'—')+'</td></tr>';
+    const fee=synthPriceAt('fee',i), item=synthPriceAt('item',i);
+    const pr=fee+item;
+    h+='<tr><td>+'+i+' → +'+(i+1)+'</td><td>'+(p[i]*100).toFixed(3)+'%</td><td>'+(c*100).toFixed(8)+'%</td><td>'+fmt(pr)+'</td></tr>';
   }
   document.getElementById('tbl').innerHTML=h;
 }
-
 function retainedNeeded(s,t,p,target){
   const m=t-s+1;
   function mul(A,B){
