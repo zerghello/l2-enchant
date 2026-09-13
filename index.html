@@ -326,6 +326,10 @@ function price(id){
   return direct;
 }
 function fmt(n){return Number.isFinite(n)?n.toLocaleString('ru-RU',{maximumFractionDigits:2}):'∞'}
+function synthPriceAt(kind,i){
+  const id=String(kind)==='fee' ? 'fee'+i : 'item'+i;
+  return price(id);
+}
 function clampLevel(id,max){
   return Math.floor(Math.max(0,Math.min(max,val(id))));
 }
@@ -532,71 +536,75 @@ function synthCalc(){
   if(t<=s)t=s+1;
   const keep=document.getElementById('keep').checked;
   const p=[];
-  for(let i=0;i<31;i++) p.push(pct('p'+i));
+  for(let i=0;i<31;i++)p.push(pct('p'+i));
 
   let q=1;
-  for(let i=s;i<t;i++) q*=p[i];
+  for(let i=s;i<t;i++)q*=p[i];
 
   let expected=0;
   if(keep){
-    for(let i=s;i<t;i++){
-      if(p[i]<=0){expected=Infinity;break;}
-      expected+=1/p[i];
-    }
+    for(let i=s;i<t;i++){ if(p[i]<=0){expected=Infinity;break;} expected+=1/p[i]; }
   }else{
     expected=q>0?1/q:Infinity;
   }
-
   document.getElementById('expected').textContent=fmt(expected);
   document.getElementById('run').textContent=(q*100).toFixed(8)+'%';
 
-  // Prices are resolved independently for every transition.
-  // If a transition field is empty, use the corresponding common price.
+  /* Cost:
+     keep=false: expected attempts on transition i = 1 / product(p[i..t-1])
+     keep=true: expected attempts on transition i = product(p[s..i-1]) / p[i]
+  */
   let synthCost=0, itemCost=0;
   if(keep){
+    // Failure keeps the current level: each transition i needs 1/p[i] attempts on average.
     for(let i=s;i<t;i++){
       if(p[i]<=0){synthCost=Infinity; itemCost=Infinity; break;}
       const attempts=1/p[i];
-      synthCost += attempts*synthPriceAt('fee',i);
-      itemCost += attempts*synthPriceAt('item',i);
+      synthCost += attempts*price('fee'+i);
+      itemCost += attempts*price('item'+i);
     }
   }else{
+    // Failure resets to START: expected attempts spent on transition i = 1/(p[i]...p[t-1]).
     let tail=1;
     for(let i=t-1;i>=s;i--){
       if(p[i]<=0){synthCost=Infinity; itemCost=Infinity; break;}
       tail*=p[i];
       const attempts=1/tail;
-      synthCost += attempts*synthPriceAt('fee',i);
-      itemCost += attempts*synthPriceAt('item',i);
+      synthCost += attempts*price('fee'+i);
+      itemCost += attempts*price('item'+i);
     }
   }
-
   const totalCost=synthCost+itemCost;
-  const expectedItems=expected;
+  const expectedItems=(Number.isFinite(expected))?expected:Infinity;
   document.getElementById('expectedItems').textContent=fmt(expectedItems);
   document.getElementById('synthCost').textContent=fmt(synthCost);
   document.getElementById('itemCost').textContent=fmt(itemCost);
   document.getElementById('avgcost').textContent=fmt(totalCost);
 
+  /* Fast probability thresholds.
+     For reset-to-start, exact closed form.
+     For retain-level, use DP per attempt, capped to avoid any heavy matrix work.
+  */
   const thresholds=[['p50',0.5],['p90',0.9],['p95',0.95],['p99',0.99]];
   for(const [id,x] of thresholds){
     let n;
-    try{
-      if(!keep) n=q>0?Math.ceil(Math.log1p(-x)/Math.log1p(-q)):Infinity;
-      else n=retainedNeeded(s,t,p,x);
-    }catch(e){ n=Infinity; }
+    if(!keep){
+      n=q>0?Math.ceil(Math.log1p(-x)/Math.log1p(-q)):Infinity;
+    }else{
+      n=retainedNeeded(s,t,p,x);
+    }
     document.getElementById(id).textContent=Number.isFinite(n)?fmt(n):'∞';
   }
 
   let h='',c=1;
   for(let i=s;i<t;i++){
     c*=p[i];
-    const fee=synthPriceAt('fee',i), item=synthPriceAt('item',i);
-    const pr=fee+item;
-    h+='<tr><td>+'+i+' → +'+(i+1)+'</td><td>'+(p[i]*100).toFixed(3)+'%</td><td>'+(c*100).toFixed(8)+'%</td><td>'+fmt(pr)+'</td></tr>';
+    const pr=price('fee'+i)+price('item'+i);
+    h+='<tr><td>+'+i+' → +'+(i+1)+'</td><td>'+(p[i]*100).toFixed(1)+'%</td><td>'+(c*100).toFixed(8)+'%</td><td>'+(pr?fmt(pr):'—')+'</td></tr>';
   }
   document.getElementById('tbl').innerHTML=h;
 }
+
 function retainedNeeded(s,t,p,target){
   const m=t-s+1;
   function mul(A,B){
