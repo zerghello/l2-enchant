@@ -951,7 +951,14 @@ function formatGroupedInput(el){
   const whole=BigInt(m[1]).toLocaleString('en-US');
   el.value=m[2]!==undefined ? whole+'.'+m[2] : whole;
 }
-document.addEventListener('input',e=>{ if(e.target.matches('input.moneyInput,input.countInput')) formatGroupedInput(e.target); });
+document.addEventListener('input',e=>{
+  if(!e.target.matches('input.moneyInput,input.countInput')) return;
+  const raw=String(e.target.value||'');
+  // While typing, do not reinterpret a single comma/dot: this prevents 1,000
+  // from becoming 1.000 -> 1.0000... before the user finishes the number.
+  if(raw.includes(',') || raw.includes('.')) return;
+  formatGroupedInput(e.target);
+});
 document.addEventListener('blur',e=>{ if(e.target.matches('input.moneyInput,input.countInput')) formatGroupedInput(e.target); },true);
 
 // XP Main: cumulative XP thresholds for levels 1-130.
