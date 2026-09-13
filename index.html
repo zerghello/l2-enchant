@@ -223,6 +223,34 @@ th{color:#9ca3af;font-weight:500}
 <button type="button" class="calc" id="calc">Рассчитать</button>
 </div>
 
+
+<div id="breakStats" class="card hidden"><div class="stats">
+<div class="stat">Шанс получить хотя бы 1<b id="bAtLeast">—</b></div>
+<div class="stat">Шанс не получить ни одного<b id="bNone">—</b></div>
+<div class="stat">Среднее успехов<b id="bMean">—</b></div>
+<div class="stat">Шанс получить нужное количество<b id="bNeed">—</b></div>
+</div>
+<div class="small">При режиме «ломается» каждая попытка уничтожает исходный предмет при неудаче. Расчёт использует биномиальное распределение.</div></div>
+
+<div class="card"><div class="stats">
+<div class="stat">Среднее синтезов<b id="expected">—</b></div>
+<div class="stat">Среднее количество 2-х предметов<b id="expectedItems">—</b></div>
+<div class="stat">Стоимость синтезов<b id="synthCost">—</b></div>
+<div class="stat">Стоимость 2-х предметов<b id="itemCost">—</b></div>
+<div class="stat">Общая стоимость<b id="avgcost">—</b></div>
+<div class="stat">50% вероятность<b id="p50">—</b></div>
+<div class="stat">90% вероятность<b id="p90">—</b></div>
+<div class="stat">95% вероятность<b id="p95">—</b></div>
+<div class="stat">99% вероятность<b id="p99">—</b></div>
+</div></div>
+
+<div class="card"><h3>Расчёт по уровням</h3>
+<table><thead><tr><th title="Какой переход между уровнями рассчитывается">Переход</th><th title="Шанс успеха одного конкретного перехода">Шанс</th><th title="Вероятность дойти от стартового уровня до этого уровня через все предыдущие переходы">Накопленный</th><th title="Стоимость одной попытки на этом переходе">Цена</th></tr></thead>
+<tbody id="tbl"></tbody></table>
+<div class="small">Цена синтеза и цена 2-го предмета списываются при каждой попытке. Пустая цена не учитывается.</div>
+</div>
+</div>
+
 </div>
 
 <div id="batchModePanel" class="hidden">
@@ -268,32 +296,6 @@ th{color:#9ca3af;font-weight:500}
 </div>
 </div>
 
-<div id="breakStats" class="card hidden"><div class="stats">
-<div class="stat">Шанс получить хотя бы 1<b id="bAtLeast">—</b></div>
-<div class="stat">Шанс не получить ни одного<b id="bNone">—</b></div>
-<div class="stat">Среднее успехов<b id="bMean">—</b></div>
-<div class="stat">Шанс получить нужное количество<b id="bNeed">—</b></div>
-</div>
-<div class="small">При режиме «ломается» каждая попытка уничтожает исходный предмет при неудаче. Расчёт использует биномиальное распределение.</div></div>
-
-<div class="card"><div class="stats">
-<div class="stat">Среднее синтезов<b id="expected">—</b></div>
-<div class="stat">Среднее количество 2-х предметов<b id="expectedItems">—</b></div>
-<div class="stat">Стоимость синтезов<b id="synthCost">—</b></div>
-<div class="stat">Стоимость 2-х предметов<b id="itemCost">—</b></div>
-<div class="stat">Общая стоимость<b id="avgcost">—</b></div>
-<div class="stat">50% вероятность<b id="p50">—</b></div>
-<div class="stat">90% вероятность<b id="p90">—</b></div>
-<div class="stat">95% вероятность<b id="p95">—</b></div>
-<div class="stat">99% вероятность<b id="p99">—</b></div>
-</div></div>
-
-<div class="card"><h3>Расчёт по уровням</h3>
-<table><thead><tr><th title="Какой переход между уровнями рассчитывается">Переход</th><th title="Шанс успеха одного конкретного перехода">Шанс</th><th title="Вероятность дойти от стартового уровня до этого уровня через все предыдущие переходы">Накопленный</th><th title="Стоимость одной попытки на этом переходе">Цена</th></tr></thead>
-<tbody id="tbl"></tbody></table>
-<div class="small">Цена синтеза и цена 2-го предмета списываются при каждой попытке. Пустая цена не учитывается.</div>
-</div>
-</div>
 
 
 </section>
