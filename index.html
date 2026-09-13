@@ -316,7 +316,13 @@ function pct(id){
   return Math.max(0,Math.min(100,n))/100;
 }
 function price(id){return Math.max(0,val(id))}
-function fmt(n){return Number.isFinite(n)?n.toLocaleString('ru-RU',{maximumFractionDigits:2}):'∞'}
+function synthPriceAt(prefix,i){
+  const direct=price(prefix+i);
+  if(direct>0) return direct;
+  const commonId=prefix==='fee'?'commonFee':'commonItem';
+  return price(commonId);
+}
+function fmt(n){return Number.isFinite(n)?n.toLocaleString('en-US',{maximumFractionDigits:2}):'∞'}
 function clampLevel(id,max){
   return Math.floor(Math.max(0,Math.min(max,val(id))));
 }
@@ -547,8 +553,8 @@ function synthCalc(){
     for(let i=s;i<t;i++){
       if(p[i]<=0){synthCost=Infinity; itemCost=Infinity; break;}
       const attempts=1/p[i];
-      synthCost += attempts*price('fee'+i);
-      itemCost += attempts*price('item'+i);
+      synthCost += attempts*synthPriceAt('fee',i);
+      itemCost += attempts*synthPriceAt('item',i);
     }
   }else{
     // Failure resets to START: expected attempts spent on transition i = 1/(p[i]...p[t-1]).
@@ -557,8 +563,8 @@ function synthCalc(){
       if(p[i]<=0){synthCost=Infinity; itemCost=Infinity; break;}
       tail*=p[i];
       const attempts=1/tail;
-      synthCost += attempts*price('fee'+i);
-      itemCost += attempts*price('item'+i);
+      synthCost += attempts*synthPriceAt('fee',i);
+      itemCost += attempts*synthPriceAt('item',i);
     }
   }
   const totalCost=synthCost+itemCost;
@@ -586,7 +592,7 @@ function synthCalc(){
   let h='',c=1;
   for(let i=s;i<t;i++){
     c*=p[i];
-    const pr=price('fee'+i)+price('item'+i);
+    const pr=synthPriceAt('fee',i)+synthPriceAt('item',i);
     h+='<tr><td>+'+i+' → +'+(i+1)+'</td><td>'+(p[i]*100).toFixed(1)+'%</td><td>'+(c*100).toFixed(8)+'%</td><td>'+(pr?fmt(pr):'—')+'</td></tr>';
   }
   document.getElementById('tbl').innerHTML=h;
