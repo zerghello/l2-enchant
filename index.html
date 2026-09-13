@@ -793,21 +793,29 @@ function escapeHtml(str){
   return String(str).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 }
 document.getElementById('addFixedDrop').addEventListener('click',makeDropRow);
-// Автоматический расчёт: один render на кадр, даже если пользователь быстро вводит много символов.
+// Автоматический расчёт. Перерисовываем не чаще одного раза за микрозадачу,
+// поэтому быстрый ввод не создаёт очередь тяжёлых пересчётов.
 let dropRenderScheduled=false;
 function scheduleDropRender(){
   if(dropRenderScheduled)return;
   dropRenderScheduled=true;
-  requestAnimationFrame(()=>{
+  Promise.resolve().then(()=>{
     dropRenderScheduled=false;
     renderDropResults();
     renderMergedDropResults();
   });
 }
+// Делегированный input ловит изменения и в уже существующих, и в новых строках.
 document.getElementById('fixedDropRows').addEventListener('input',scheduleDropRender);
-document.getElementById('dropHours').addEventListener('input',scheduleDropRender);
-document.getElementById('dropDaysWeek').addEventListener('input',scheduleDropRender);
-document.getElementById('dropDaysMonth').addEventListener('input',scheduleDropRender);
+document.getElementById('fixedDropRows').addEventListener('change',scheduleDropRender);
+// Общие параметры дня/недели/месяца всегда сразу влияют на все незалоченные строки.
+['dropHours','dropDaysWeek','dropDaysMonth'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el){
+    el.addEventListener('input',scheduleDropRender);
+    el.addEventListener('change',scheduleDropRender);
+  }
+});
 document.getElementById('lockAllDrops').addEventListener('click',()=>{
   document.querySelectorAll('#fixedDropRows .dropRow').forEach(row=>{
     const id=row.dataset.dropId;
@@ -865,6 +873,9 @@ document.getElementById('mergedDropTbl').addEventListener('click',e=>{
   tr.classList.add('mergedResultActive');
 });
 makeDropRow();
+
+// Первичный расчёт после создания первой строки.
+scheduleDropRender();
 
 /* Initial calculation. Further drop changes are recalculated automatically and throttled to one render per animation frame. */
 enchantCalc();
