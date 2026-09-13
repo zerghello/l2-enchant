@@ -285,7 +285,9 @@ const enchDefaults=[50,35,25,15,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
 function val(id){
   const el=document.getElementById(id);
   if(!el)return 0;
-  let s=String(el.value||'').trim().replace(/\s/g,''); if(s.includes(',')&&!s.includes('.')) s=s.replace(',','.'); else s=s.replace(/,/g,'');
+  // All grouped numeric fields use comma as thousands separator.
+  // Decimal fractions (where supported) continue to use a dot.
+  const s=String(el.value||'').trim().replace(/[\s,]/g,'');
   if(s==='')return 0;
   const n=Number(s);
   return Number.isFinite(n)?n:0;
@@ -833,7 +835,10 @@ function dropCalc(){
 }
 function dropNumEl(el){
   if(!el)return 0;
-  let raw=String(el.value??'').trim().replace(/\s/g,''); if(raw.includes(',')&&!raw.includes('.')) raw=raw.replace(',','.'); else raw=raw.replace(/,/g,''); const n=Number(raw);
+  // Drop quantity fields use comma only as a thousands separator (e.g. 1,000,000).
+  // Never treat a comma as a decimal separator here, otherwise 1,000,000 becomes 1.
+  const raw=String(el.value??'').trim().replace(/[\s,]/g,'');
+  const n=Number(raw);
   return Number.isFinite(n)?Math.max(0,n):0;
 }
 function escapeHtml(str){
@@ -931,7 +936,7 @@ function formatGroupedInput(el){
   if(raw===''){el.value='';return;}
   const m=raw.match(/^(\d+)(?:\.(\d*)?)?$/);
   if(!m)return;
-  const whole=Number(m[1]).toLocaleString('en-US');
+  const whole=BigInt(m[1]).toLocaleString('en-US');
   el.value=m[2]!==undefined ? whole+'.'+m[2] : whole;
 }
 
