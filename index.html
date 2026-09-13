@@ -240,21 +240,21 @@ th{color:#9ca3af;font-weight:500}
 <section id="xpCalc" class="hidden">
 <div class="card">
   <h2 style="margin:2px 0 6px">📈 Опыт персонажа</h2>
-  <div class="small">Lineage 2 Main — таблица порогов XP. Вводи свой текущий уровень и сколько XP уже набрано внутри этого уровня.</div>
+  <div class="small">Lineage 2 Main — таблица порогов XP. Вводи свой текущий уровень, процент опыта из игры и XP из игрового счётчика «опыт за сутки».</div>
   <div class="grid" style="margin-top:12px">
     <div><label>Текущий уровень<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Твой текущий уровень. Для текущей версии калькулятора доступен диапазон 1–130.</span></span></label><input id="xpLevel" type="number" min="1" max="130" step="1" value="120"></div>
     <div><label>Опыт внутри текущего уровня, %<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Введи процент опыта точно так, как он показывается в игре. Например: 85.2905%.</span></span></label><input id="xpCurrent" type="text" inputmode="decimal" placeholder="85,2905" value="0"></div>
   </div>
   <div class="grid" style="margin-top:10px">
     <div><label>Целевой уровень<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Выбери любой уровень, до которого хочешь рассчитать оставшийся опыт.</span></span></label><select id="xpTarget"></select></div>
-    <div><label>Опыт за сутки фарма<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Сколько опыта ты в среднем получаешь за одни сутки фарма. Например, если фармишь 8 часов и получаешь 10 млрд XP в час, укажи 80 млрд.</span></span></label><input id="xpPerDay" type="text" inputmode="decimal" placeholder="Например: 80000000000"></div>
+    <div><label>Опыт за сутки в игре<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Введи количество XP, которое показывает игровой счётчик «опыт за сутки». Счётчик обновляется в 06:30 по серверному времени.</span></span></label><input id="xpPerDay" type="text" inputmode="decimal" placeholder="Например: 80000000000"></div>
   </div>
   <div class="stats" style="margin-top:12px">
     <div class="stat">Прогресс текущего уровня<b id="xpPercent">—</b></div>
     <div class="stat">XP до следующего уровня<b id="xpNext">—</b></div>
     <div class="stat">XP до цели<b id="xpToTarget">—</b></div>
-    <div class="stat">Суток до следующего уровня<b id="xpDaysNext">—</b></div>
-    <div class="stat">Суток до целевого уровня<b id="xpDaysTarget">—</b></div>
+    <div class="stat">Дней до следующего уровня<b id="xpDaysNext">—</b></div>
+    <div class="stat">Дней до целевого уровня<b id="xpDaysTarget">—</b></div>
   </div>
 </div>
 <div class="card">
