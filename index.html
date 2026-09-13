@@ -315,21 +315,8 @@ function pct(id){
   if(!Number.isFinite(n))return 0;
   return Math.max(0,Math.min(100,n))/100;
 }
-function price(id){
-  const direct=Math.max(0,val(id));
-  if(direct>0) return direct;
-  // If a per-level price is empty, use the common price directly.
-  // This keeps synthesis calculations working even when the user fills
-  // only the two common price fields and does not press Apply.
-  if(/^fee\d+$/.test(id)) return Math.max(0,val('commonFee'));
-  if(/^item\d+$/.test(id)) return Math.max(0,val('commonItem'));
-  return direct;
-}
+function price(id){return Math.max(0,val(id))}
 function fmt(n){return Number.isFinite(n)?n.toLocaleString('ru-RU',{maximumFractionDigits:2}):'∞'}
-function synthPriceAt(kind,i){
-  const id=String(kind)==='fee' ? 'fee'+i : 'item'+i;
-  return price(id);
-}
 function clampLevel(id,max){
   return Math.floor(Math.max(0,Math.min(max,val(id))));
 }
@@ -548,7 +535,7 @@ function synthCalc(){
     expected=q>0?1/q:Infinity;
   }
   document.getElementById('expected').textContent=fmt(expected);
-  document.getElementById('run').textContent=(q*100).toFixed(8)+'%';
+  document.getElementById('erun').textContent=(q*100).toFixed(8)+'%';
 
   /* Cost:
      keep=false: expected attempts on transition i = 1 / product(p[i..t-1])
@@ -682,7 +669,7 @@ function breakCalc(){
   // In break mode, "average syntheses" means number of source-item attempts available.
   document.getElementById('expected').textContent=fmt(n);
   document.getElementById('expectedItems').textContent=fmt(n);
-  document.getElementById('run').textContent=(q*100).toFixed(8)+'%';
+  document.getElementById('erun').textContent=(q*100).toFixed(8)+'%';
   // In break mode every source item starts a full synthesis chain.
   // Keep the split visible even here: costs are based on the first transition price.
   const synthCost=n*price('fee'+s);
