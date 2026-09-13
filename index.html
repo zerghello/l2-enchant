@@ -286,14 +286,12 @@ function normalizeNumericString(value, grouped=false){
   let s=String(value??'').trim().replace(/\s/g,'');
   if(!s)return '';
   if(grouped){
-    if(s.includes('.')) return s.replace(/,/g,'');
-    const commas=(s.match(/,/g)||[]).length;
-    if(commas===1){
-      const m=s.match(/^(\d+),(\d+)$/);
-      if(m && m[2].length!==3) s=m[1]+'.'+m[2]; else s=s.replace(/,/g,'');
-    }else s=s.replace(/,/g,'');
+    // Grouped fields: commas are ALWAYS thousands separators, dot is decimal.
+    s=s.replace(/,/g,'');
   }else{
-    if(s.includes(',') && !s.includes('.')) s=s.replace(',','.'); else s=s.replace(/,/g,'');
+    // Non-grouped decimal fields (e.g. XP percentage): accept comma as decimal.
+    if(s.includes(',') && !s.includes('.')) s=s.replace(',','.');
+    else s=s.replace(/,/g,'');
   }
   return s;
 }
@@ -947,24 +945,16 @@ function formatGroupedInput(el){
   let raw=String(el.value??'').replace(/\s/g,'');
   if(raw===''){el.value='';return;}
 
-  // The display convention for grouped fields is always: 1,234,567.89
-  // A comma is treated as a decimal separator only when it is clearly decimal
-  // (e.g. 1,5 or 12,50). A 3-digit comma group is thousands (1,000).
-  let normalized=raw;
-  if(raw.includes('.')){
-    const parts=raw.split('.');
-    const whole=parts.shift().replace(/,/g,'');
-    normalized=whole+'.'+parts.join('').replace(/,/g,'');
-  }else if((raw.match(/,/g)||[]).length===1){
-    const m=raw.match(/^(\d+),(\d*)$/);
-    if(m && m[2].length>0 && m[2].length!==3) normalized=m[1]+'.'+m[2];
-    else normalized=raw.replace(/,/g,'');
-  }else normalized=raw.replace(/,/g,'');
-
-  const m=normalized.match(/^(\d+)(?:\.(\d*))?$/);
-  if(!m)return;
-  const whole=BigInt(m[1]).toLocaleString('en-US');
-  el.value=m[2]!==undefined ? whole+'.'+m[2] : whole;
+  // Grouped fields use ONE unambiguous display convention: 1,234,567.89
+  // Commas are always thousands separators; a dot is the decimal separator.
+  // This deliberately avoids treating a comma as a decimal separator.
+  const trailingDot=/\.$/.test(raw);
+  const parts=raw.split('.');
+  let whole=parts.shift().replace(/,/g,'').replace(/[^0-9]/g,'');
+  let frac=parts.join('').replace(/[^0-9]/g,'');
+  if(whole==='') whole='0';
+  const grouped=BigInt(whole).toLocaleString('en-US');
+  el.value=trailingDot ? grouped+'.' : (parts.length || frac ? grouped+'.'+frac : grouped);
 }
 
 document.addEventListener('input',e=>{
@@ -972,17 +962,21 @@ document.addEventListener('input',e=>{
   const el=e.target;
   const before=el.value;
   const pos=el.selectionStart;
-  if(pos===null){formatGroupedInput(el);return;}
+  if(pos===null){return;}
 
-  // Format as the user types. Recalculate the caret from the number of
-  // meaningful characters before it, so inserting commas does not jump to end.
-  const beforeDigits=(before.slice(0,pos).match(/[0-9.]/g)||[]).length;
-  formatGroupedInput(el);
+  // If the user is currently entering a decimal point, leave the field alone.
+  // Otherwise normalize commas as grouping separators and format the number.
+  const beforeDigits=(before.slice(0,pos).match(/[0-9]/g)||[]).length;
+  const trailingDot=/\.$/.test(before.replace(/\s/g,''));
+  if(!trailingDot) formatGroupedInput(el);
+
   let target=0, seen=0;
   while(target<el.value.length && seen<beforeDigits){
-    if(/[0-9.]/.test(el.value[target])) seen++;
+    if(/[0-9]/.test(el.value[target])) seen++;
     target++;
   }
+  // Keep the caret before the decimal part when the user is typing it.
+  if(trailingDot) target=Math.min(pos,el.value.length);
   try{el.setSelectionRange(target,target);}catch(_){ }
 });
 
