@@ -257,14 +257,14 @@ th{color:#9ca3af;font-weight:500}
 <!-- Сначала вводим параметры партии и шансы, затем ниже получаем ожидаемый результат. -->
 <div class="card">
 <h3 style="margin:2px 0 8px">🧪 Расчёт партии</h3>
-<div class="small">Укажи, сколько предметов у тебя есть. При неудаче оба предмета сгорают, при успехе из двух получается один предмет следующего уровня.</div>
+<div class="small">Укажи количество сфер и параметры синтеза. Одна попытка: 1 сфера текущего уровня + 1 банка Святой воды. При успехе сфера переходит на следующий уровень, при неудаче сфера уничтожается. Святая вода покупается в магазине за 5 700 000 аден.</div>
 <div class="grid" style="margin-top:12px">
   <div><label>Исходных предметов<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">От 1 до 1 000 000 предметов начального уровня.</span></span></label><input id="batchStock" class="countInput" type="text" inputmode="numeric" value="100" placeholder="100"></div>
   <div><label>Стартовый уровень</label><input id="batchStartLevel" type="number" min="0" max="9" value="0"></div>
   <div><label>До уровня</label><input id="batchTargetLevel" type="number" min="1" max="10" value="8"></div>
   <div><label>Хочу получить предметов<span class="info" tabindex="0" aria-label="Информация">i<span class="tip">Количество предметов целевого/каждого уровня, которое вас интересует. В таблице ниже будет показана вероятность получить не меньше этого количества.</span></span></label><input id="batchWanted" class="countInput" type="text" inputmode="numeric" value="1" placeholder="1"></div>
   <div><label>Цена одного синтеза</label><input id="batchSynthPrice" class="moneyInput" type="text" inputmode="numeric" placeholder="Например: 60000000"></div>
-  <div><label>Цена 2-го предмета</label><input id="batchItemPrice" class="moneyInput" type="text" inputmode="numeric" placeholder="Например: 10000000"></div>
+  <div><label>Цена Святой воды</label><input id="batchItemPrice" class="moneyInput" type="text" inputmode="numeric" value="5700000" placeholder="5700000"></div>
 </div>
 
 <div style="margin-top:14px">
@@ -283,11 +283,11 @@ th{color:#9ca3af;font-weight:500}
 <div id="batchSynthResult" class="hidden">
 <div class="card">
 <h3 style="margin:2px 0 8px">📊 Ожидаемый результат</h3>
-<table><thead><tr><th>Уровень</th><th>Ожидаемо предметов</th><th>Шанс получить ≥ указанного количества</th><th>Синтезов</th><th>2-й предмет</th></tr></thead><tbody id="batchSynthTbl"></tbody></table>
+<table><thead><tr><th>Уровень</th><th>Ожидаемо предметов</th><th>Шанс получить ≥ указанного количества</th><th>Синтезов</th><th>Святая вода</th></tr></thead><tbody id="batchSynthTbl"></tbody></table>
 <div class="stats" style="margin-top:12px">
 <div class="stat">Исходных предметов<b id="batchStart">—</b></div>
 <div class="stat">Всего синтезов<b id="batchAttempts">—</b></div>
-<div class="stat">Всего 2-х предметов<b id="batchItems">—</b></div>
+<div class="stat">Всего Святой воды<b id="batchItems">—</b></div>
 <div class="stat">Стоимость синтезов<b id="batchSynthCost">—</b></div>
 <div class="stat">Стоимость 2-х предметов<b id="batchItemCost">—</b></div>
 <div class="stat">💰 Общая стоимость<b id="batchTotalCost">—</b></div>
@@ -675,7 +675,7 @@ function retainedNeeded(s,t,p,target){
 }
 
 document.getElementById('calc').addEventListener('click',synthCalc);
-/* -------- batch synthesis: breaking items -------- */
+/* -------- batch synthesis: 1 sphere + 1 Holy Water -------- */
 function initBatchChanceRows(){
   const wrap=document.getElementById('batchChanceRows');
   if(!wrap)return;
@@ -694,27 +694,6 @@ function getBatchChance(level){
   const n=Number(String(el.value||'').replace(',','.'));
   return Number.isFinite(n)?Math.max(0,Math.min(100,n))/100:0;
 }
-function poissonAtLeast(lambda,k){
-  if(!Number.isFinite(lambda) || lambda<=0) return 0;
-  k=Math.max(1,Math.floor(k||1));
-  if(k===1) return 1-Math.exp(-lambda);
-  if(lambda>1e6 && k<lambda*0.25) return 1;
-  if(k>10000){
-    const z=(lambda-k+0.5)/Math.sqrt(lambda);
-    return Math.max(0,Math.min(1,0.5*(1+Math.erf(z/Math.SQRT2))));
-  }
-  // Exact Poisson lower tail for practical k; stable recurrence.
-  let term=Math.exp(-lambda), sum=term;
-  const limit=Math.min(k-1,10000);
-  for(let i=1;i<=limit;i++){
-    term*=lambda/i;
-    sum+=term;
-    if(!Number.isFinite(sum)) break;
-  }
-  if(Number.isFinite(sum)) return Math.max(0,Math.min(1,1-sum));
-  const z=(lambda-k+0.5)/Math.sqrt(Math.max(lambda,1));
-  return Math.max(0,Math.min(1,0.5*(1+Math.erf(z/Math.SQRT2))));
-}
 function fmtChance(x){
   if(!Number.isFinite(x)) return '—';
   if(x<=0) return '0%';
@@ -724,6 +703,47 @@ function fmtChance(x){
   if(pct>=0.000001) return pct.toFixed(6).replace(/0+$/,'').replace(/\.$/,'')+'%';
   return pct.toExponential(2)+'%';
 }
+/* P(X >= k) for X~Binomial(n,p). For large n, use stable Poisson/normal
+   approximations; for small/moderate n use an exact recurrence. */
+function binomialAtLeast(n,p,k){
+  n=Math.max(0,Math.floor(n)); k=Math.max(1,Math.floor(k||1));
+  if(k>n || p<=0) return 0;
+  if(p>=1) return 1;
+  const mean=n*p;
+  if(k<=1) return -Math.expm1(n*Math.log1p(-p));
+  if(mean>1e6 || n>2e6){
+    const variance=n*p*(1-p);
+    if(variance<=0)return mean>=k?1:0;
+    const z=(mean-k+0.5)/Math.sqrt(variance);
+    return Math.max(0,Math.min(1,0.5*(1+Math.erf(z/Math.SQRT2))));
+  }
+  if(p<0.01 && mean<1e5){
+    /* Poisson approximation is excellent for the tiny probabilities typical here. */
+    let term=Math.exp(-mean), sum=term;
+    const limit=Math.min(k-1,10000);
+    for(let i=1;i<=limit;i++){
+      term*=mean/i; sum+=term;
+      if(!Number.isFinite(sum))break;
+    }
+    if(Number.isFinite(sum))return Math.max(0,Math.min(1,1-sum));
+  }
+  /* Exact binomial lower tail by recurrence around P(X=0). */
+  let term=Math.exp(n*Math.log1p(-p));
+  if(!Number.isFinite(term)){
+    const variance=n*p*(1-p), z=(mean-k+0.5)/Math.sqrt(Math.max(variance,1));
+    return Math.max(0,Math.min(1,0.5*(1+Math.erf(z/Math.SQRT2))));
+  }
+  let sum=term;
+  const limit=Math.min(k-1,n);
+  for(let i=1;i<=limit;i++){
+    term*=((n-i+1)/i)*(p/(1-p));
+    sum+=term;
+    if(!Number.isFinite(sum))break;
+  }
+  if(Number.isFinite(sum))return Math.max(0,Math.min(1,1-sum));
+  const variance=n*p*(1-p), z=(mean-k+0.5)/Math.sqrt(Math.max(variance,1));
+  return Math.max(0,Math.min(1,0.5*(1+Math.erf(z/Math.SQRT2))));
+}
 function batchSynthCalc(){
   const stock=Math.max(1,Math.min(1000000,Math.floor(val('batchStock'))));
   let s=Math.max(0,Math.min(9,Math.floor(Number(document.getElementById('batchStartLevel').value)||0)));
@@ -731,27 +751,33 @@ function batchSynthCalc(){
   if(t<=s)t=Math.min(10,s+1);
   const wanted=Math.max(1,Math.min(stock,Math.floor(val('batchWanted'))||1));
   const synthPrice=price('batchSynthPrice');
-  const itemPrice=price('batchItemPrice');
-  let current=stock,totalAttempts=0,totalItems=0,totalSynthCost=0,totalItemCost=0,html='';
+  const waterPrice=price('batchItemPrice');
+  let current=stock,totalAttempts=0,totalWater=0,totalSynthCost=0,totalWaterCost=0,html='';
+  let cumulative=1;
   for(let i=s;i<t;i++){
-    const attempts=Math.floor(current/2);
-    if(attempts<=0)break;
     const prob=getBatchChance(i);
-    const success=attempts*prob;
+    cumulative*=prob;
+    /* Every sphere that reaches this level gets exactly one attempt. */
+    const attempts=current;
+    const success=current*prob;
     const synthCost=attempts*synthPrice;
-    const itemCost=attempts*itemPrice;
-    const chance=poissonAtLeast(success,wanted);
-    totalAttempts+=attempts; totalItems+=attempts; totalSynthCost+=synthCost; totalItemCost+=itemCost;
+    const waterCost=attempts*waterPrice;
+    const chance=binomialAtLeast(stock,cumulative,wanted);
+    totalAttempts+=attempts;
+    totalWater+=attempts;
+    totalSynthCost+=synthCost;
+    totalWaterCost+=waterCost;
     html+='<tr><td>+'+i+' → +'+(i+1)+'</td><td>'+fmt(success)+'</td><td>'+fmtChance(chance)+'</td><td>'+fmt(attempts)+'</td><td>'+fmt(attempts)+'</td></tr>';
     current=success;
+    if(current<=0)break;
   }
   document.getElementById('batchStart').textContent=fmt(stock);
   document.getElementById('batchAttempts').textContent=fmt(totalAttempts);
-  document.getElementById('batchItems').textContent=fmt(totalItems);
+  document.getElementById('batchItems').textContent=fmt(totalWater);
   document.getElementById('batchSynthCost').textContent=fmt(totalSynthCost);
-  document.getElementById('batchItemCost').textContent=fmt(totalItemCost);
-  document.getElementById('batchTotalCost').textContent=fmt(totalSynthCost+totalItemCost);
-  document.getElementById('batchSynthTbl').innerHTML=html||'<tr><td colspan="5">Недостаточно предметов для одной попытки.</td></tr>';
+  document.getElementById('batchItemCost').textContent=fmt(totalWaterCost);
+  document.getElementById('batchTotalCost').textContent=fmt(totalSynthCost+totalWaterCost);
+  document.getElementById('batchSynthTbl').innerHTML=html||'<tr><td colspan="5">Нет переходов для расчёта.</td></tr>';
   document.getElementById('batchSynthResult').classList.remove('hidden');
 }
 
@@ -763,7 +789,6 @@ document.getElementById('applyBatchChanceAll').addEventListener('click',()=>{
   document.querySelectorAll('.batchChanceInput').forEach(el=>el.value=n);
 });
 document.querySelectorAll('#batchSynthPrice,#batchItemPrice,#batchCommonChance').forEach(el=>el.addEventListener('focus',function(){this.select();}));
-
 document.getElementById('batchSynthCalc').addEventListener('click',batchSynthCalc);
 
 const synthModeBtn=document.getElementById('synthModeBtn'), batchModeBtn=document.getElementById('batchModeBtn');
